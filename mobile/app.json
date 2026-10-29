@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "WasteLink Bali (Warga)",
+    "slug": "wastelink-bali",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1D3F35"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "id.bali.wastelink.warga",
+      "infoPlist": {
+        "NSCameraUsageDescription": "WasteLink Bali memerlukan izin kamera untuk mendokumentasikan kondisi sampah terpilah warga sebelum dijemput.",
+        "NSPhotoLibraryUsageDescription": "WasteLink Bali memerlukan izin galeri untuk memilih foto sampah yang hendak disetorkan.",
+        "NSLocationWhenInUseUsageDescription": "WasteLink Bali memerlukan lokasi Anda untuk memastikan penjemputan sampah berada di banjar pilot Sukawati."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1D3F35"
+      },
+      "package": "id.bali.wastelink.warga",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "scheme": "wastelink",
+    "extra": {
+      "apiUrl": "http://localhost:8000/api/v1",
+      "defaultBanjarArea": "sa_sukawati"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "wastelink-bali-mobile",
+  "version": "1.0.0",
+  "description": "WasteLink Bali — Aplikasi Mobile Khusus User/Warga Banjar Sukawati",
+  "main": "App.tsx",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "wastelink",
+    "bali",
+    "tps3r",
+    "circular-economy",
+    "mobile"
+  ],
+  "author": "WasteLink Bali Team",
+  "license": "ISC",
+  "dependencies": {
+    "expo": "^58.0.21",
+    "react": "^19.3.1",
+    "react-native": "^0.88.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
