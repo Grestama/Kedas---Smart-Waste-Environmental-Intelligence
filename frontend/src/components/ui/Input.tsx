@@ -6,6 +6,7 @@ export interface InputProps
   label?: string;
   helperText?: string;
   errorMessage?: string;
+  error?: string;
   leftAddon?: React.ReactNode;
   rightAddon?: React.ReactNode;
 }
@@ -17,6 +18,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       label,
       helperText,
       errorMessage,
+      error,
       leftAddon,
       rightAddon,
       id,
@@ -28,7 +30,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const generatedId = React.useId();
     const inputId = id || generatedId;
-    const hasError = Boolean(errorMessage);
+    const finalError = error || errorMessage;
+    const hasError = Boolean(finalError);
 
     return (
       <div className="w-full space-y-1.5 text-left">
@@ -88,7 +91,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             role="alert"
             className="text-xs text-[#A43F35] font-medium"
           >
-            {errorMessage}
+            {finalError}
           </p>
         ) : helperText ? (
           <p id={`${inputId}-helper`} className="text-xs text-text-secondary">

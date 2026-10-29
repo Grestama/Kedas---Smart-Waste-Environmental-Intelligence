@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
   label: string;
   value: string | number;
+  unit?: string;
   icon?: React.ReactNode;
   hint?: string;
   trend?: {
@@ -17,6 +18,7 @@ export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
 export function StatCard({
   label,
   value,
+  unit,
   icon,
   hint,
   trend,
@@ -61,11 +63,21 @@ export function StatCard({
       <div className="mt-3">
         <div
           className={cn(
-            "text-2xl font-bold tracking-tight",
+            "text-2xl font-bold tracking-tight flex items-baseline gap-1.5",
             highlight ? "text-white" : "text-brand-900"
           )}
         >
-          {value}
+          <span>{value}</span>
+          {unit && (
+            <span
+              className={cn(
+                "text-xs font-normal",
+                highlight ? "text-brand-100" : "text-text-secondary"
+              )}
+            >
+              {unit}
+            </span>
+          )}
         </div>
 
         {(hint || trend) && (

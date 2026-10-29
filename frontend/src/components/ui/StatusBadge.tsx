@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 export type BadgeVariant = "success" | "warning" | "danger" | "info" | "neutral";
 
 export interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  status?: string;
   variant?: BadgeVariant;
   dot?: boolean;
   label?: string;
@@ -58,6 +59,7 @@ const variantStyles: Record<
 };
 
 export function StatusBadge({
+  status,
   variant = "neutral",
   dot = true,
   label,
@@ -66,8 +68,10 @@ export function StatusBadge({
   children,
   ...props
 }: StatusBadgeProps) {
-  const config = variantStyles[variant];
-  const content = children || label || config.defaultLabel;
+  const autoConfig = status ? getStatusBadgeConfig(status) : null;
+  const activeVariant = autoConfig ? autoConfig.variant : variant;
+  const config = variantStyles[activeVariant];
+  const content = children || label || (autoConfig ? autoConfig.label : config.defaultLabel);
 
   return (
     <span

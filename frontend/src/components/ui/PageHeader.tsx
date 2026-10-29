@@ -9,6 +9,7 @@ export interface PageHeaderProps {
   homeHref?: string;
   badge?: React.ReactNode;
   actions?: React.ReactNode;
+  action?: React.ReactNode;
   className?: string;
 }
 
@@ -19,8 +20,10 @@ export function PageHeader({
   homeHref,
   badge,
   actions,
+  action,
   className,
 }: PageHeaderProps) {
+  const finalActions = actions || action;
   return (
     <div className={cn("space-y-2 mb-6", className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
@@ -38,8 +41,8 @@ export function PageHeader({
             <p className="mt-1 text-sm text-text-secondary">{description}</p>
           )}
         </div>
-        {actions && (
-          <div className="flex items-center gap-2.5 shrink-0">{actions}</div>
+        {finalActions && (
+          <div className="flex items-center gap-2.5 shrink-0">{finalActions}</div>
         )}
       </div>
     </div>

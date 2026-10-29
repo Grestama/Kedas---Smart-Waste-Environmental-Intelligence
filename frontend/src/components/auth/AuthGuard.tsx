@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { ShieldAlert, Lock, AlertTriangle, ArrowRight } from "lucide-react";
+import { ShieldAlert, Lock, AlertTriangle, ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export interface AuthGuardProps {
@@ -22,7 +22,7 @@ export function AuthGuard({
   routerRef.current = router;
 
   const pathname = usePathname();
-  const { user, status, hasRole, activeRole } = useAuth();
+  const { user, roles, status, hasRole, activeRole } = useAuth();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -89,6 +89,60 @@ export function AuthGuard({
     const isAuthorized = hasRole(allowedRoles);
 
     if (!isAuthorized) {
+      // Check if user specifically applied for COLLECTOR but is still PENDING or REJECTED
+      const collectorRole = roles.find((r) => r.code === "COLLECTOR");
+      if (allowedRoles.includes("COLLECTOR") && collectorRole) {
+        if (collectorRole.verification_status === "PENDING") {
+          return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-[#FFF4D9] text-[#98631C] flex items-center justify-center mb-4 border border-[#F7E1A0]">
+                <Clock className="w-7 h-7" />
+              </div>
+              <h2 className="text-lg font-bold text-brand-900 tracking-tight">
+                Permohonan Petugas: Menunggu Verifikasi
+              </h2>
+              <p className="text-xs text-text-secondary max-w-md mt-1.5 leading-relaxed">
+                Akun Anda telah terdaftar sebagai calon Petugas Pengangkut Sampah dan sedang ditinjau oleh Operator Admin TPS3R. Operasional lapangan POS baru dapat diakses setelah status peran diverifikasi (ACTIVE).
+              </p>
+              <div className="mt-6 flex items-center gap-3">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => router.push("/app")}
+                >
+                  Kembali ke Dashboard Warga
+                </Button>
+              </div>
+            </div>
+          );
+        }
+
+        if (collectorRole.verification_status === "REJECTED") {
+          return (
+            <div className="min-h-[60vh] flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-[#FBEAE7] text-[#A43F35] flex items-center justify-center mb-4 border border-[#F5C6BF]">
+                <ShieldAlert className="w-7 h-7" />
+              </div>
+              <h2 className="text-lg font-bold text-[#A43F35] tracking-tight">
+                Permohonan Petugas Belum Disetujui
+              </h2>
+              <p className="text-xs text-text-secondary max-w-md mt-1.5 leading-relaxed">
+                Pengajuan Anda sebagai Petugas Lapangan belum dapat disetujui oleh pengurus banjar. Silakan hubungi koordinator TPS3R Banjar Sukawati untuk informasi lebih lanjut.
+              </p>
+              <div className="mt-6 flex items-center gap-3">
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => router.push("/app")}
+                >
+                  Kembali ke Dashboard Warga
+                </Button>
+              </div>
+            </div>
+          );
+        }
+      }
+
       const targetWorkspace =
         activeRole === "ADMIN" ? "/admin" : activeRole === "COLLECTOR" ? "/staff" : "/app";
 

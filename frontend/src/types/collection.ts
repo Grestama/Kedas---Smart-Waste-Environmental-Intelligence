@@ -51,14 +51,17 @@ export interface PickupStatusEvent {
 }
 
 export type PickupStatus =
+  | "SUBMITTED"
   | "PENDING_ASSIGNMENT"
   | "ACCEPTED"
   | "EN_ROUTE"
   | "ARRIVED"
   | "INSPECTION"
+  | "WEIGHED"
   | "COLLECTED"
   | "COMPLETED"
-  | "CANCELLED";
+  | "CANCELLED"
+  | "REJECTED";
 
 export interface PickupRequest {
   id: string;

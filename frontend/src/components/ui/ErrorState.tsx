@@ -6,6 +6,7 @@ import { Button } from "./Button";
 export interface ErrorStateProps {
   title?: string;
   message?: string;
+  description?: string;
   onRetry?: () => void;
   className?: string;
   variant?: "inline" | "card" | "full";
@@ -13,11 +14,16 @@ export interface ErrorStateProps {
 
 export function ErrorState({
   title = "Terjadi Kesalahan",
-  message = "Gagal memuat data operasional. Periksa koneksi jaringan Anda atau coba kembali beberapa saat lagi.",
+  message,
+  description,
   onRetry,
   className,
   variant = "card",
 }: ErrorStateProps) {
+  const finalMessage =
+    description ||
+    message ||
+    "Gagal memuat data operasional. Periksa koneksi jaringan Anda atau coba kembali beberapa saat lagi.";
   if (variant === "inline") {
     return (
       <div
@@ -30,7 +36,7 @@ export function ErrorState({
         <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
         <div className="flex-1">
           <p className="font-semibold">{title}</p>
-          <p className="text-xs text-[#A43F35]/90 mt-0.5">{message}</p>
+          <p className="text-xs text-[#A43F35]/90 mt-0.5">{finalMessage}</p>
         </div>
         {onRetry && (
           <button
@@ -58,7 +64,7 @@ export function ErrorState({
       <h3 className="text-base font-semibold text-[#A43F35] tracking-tight">
         {title}
       </h3>
-      <p className="mt-1.5 text-sm text-text-secondary max-w-md">{message}</p>
+      <p className="mt-1.5 text-sm text-text-secondary max-w-md">{finalMessage}</p>
       {onRetry && (
         <div className="mt-5">
           <Button

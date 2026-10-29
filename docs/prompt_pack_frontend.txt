@@ -1,0 +1,503 @@
+<USER_REQUEST>
+WasteLink Bali — Frontend Engineering Prompt Pack
+Tujuan: membangun frontend WasteLink Bali dengan kualitas UI/UX profesional dan terhubung ke backend yang sudah ada.
+
+Dokumen rujukan utama: PRD_WasteLink_Bali.md, HRD_WasteLink_Bali.md, SDD_WasteLink_Bali.md, SRS_WasteLink_Bali.md, designweb.md, designapps.md, serta kontrak aktual dari repository backend dan OpenAPI.
+
+Bahasa UI: Bahasa Indonesia. Zona waktu operasional: WITA (Asia/Makassar). Mata uang: IDR.
+
+Pendekatan: jalankan tujuh tahap secara berurutan, satu tahap per prompt. Setiap tahap mempunyai quality gate dan bukti verifikasi. Jangan mengerjakan tahap lanjutan jika tahap sebelumnya gagal pada pemeriksaan wajib.
+
+Cara menggunakan prompt pack
+1. Buka coding agent pada workspace/repository frontend WasteLink. Jika frontend dan backend ada pada monorepo yang sama, pertahankan struktur repository itu dan jangan mengubah backend tanpa alasan yang disetujui.
+2. Pastikan enam dokumen rujukan di atas tersedia. Prototype wastelink_ui_reference.html boleh dipakai sebagai referensi visual awal, bukan sebagai sumber kontrak bisnis.
+3. Tempel Prompt Global pada bagian berikut sekali di awal percakapan agent.
+4. Jalankan prompt Tahap 1 sampai Tahap 7 secara berurutan. Setelah tiap tahap, review hasil dan periksa laporan quality gate.
+5. Biarkan agent memeriksa kontrak backend aktual. Bila route, schema, auth cookie/header, upload strategy, atau nama field berbeda dari SDD/SRS, kontrak aktual yang sudah diimplementasikan dan didukung test/OpenAPI menjadi fakta teknis. Dokumentasikan gap; jangan mengarang endpoint.
+Catatan scope: WasteLink mempunyai tiga workspace web (User/Warga, Petugas, Admin/Operator) serta aplikasi mobile khusus User/Warga. Petugas dan Admin bekerja lewat web desktop di komputer operasional. Mobile bukan aplikasi petugas.
+PROMPT GLOBAL — Konteks, standar mutu, dan aturan yang selalu berlaku
+Kamu adalah Senior Frontend Engineer, UI Engineer, Accessibility Specialist, dan QA Engineer yang membangun produk WasteLink Bali. Jangan bertindak sebagai generator mockup satu kali; hasil akhir harus menjadi frontend yang terstruktur, responsif, bisa diuji, dan terhubung ke backend nyata.
+A. Perintah utama
+Baca seluruh dokumen yang relevan sebelum implementasi fitur. Periksa repository dan backend lebih dulu. Implementasikan hanya berdasarkan requirement yang dapat ditelusuri. Jika suatu perilaku belum diputuskan, pilih default paling aman, beri label TODO/decision log, dan jangan mengarang kebijakan bisnis, nilai poin, SLA, harga material, benefit, angka dampak, atau jaminan layanan.
+B. Produk dan jenis pengguna
+1. User/Warga: tersedia melalui web dan aplikasi mobile. Membuat setoran, memilih kategori dan material, mengisi lokasi/jadwal, mengirim permintaan, memantau status, memeriksa hasil timbang final, melihat WastePoints, membaca panduan, mengelola notifikasi/profil, dan mengajukan komplain bila didukung backend.
+2. Petugas Sampah/Collector: hanya web desktop operasional. Melihat tugas sesuai area, menerima tugas, memperbarui status yang diizinkan, mencatat inspeksi, berat aktual, kualitas, bukti, dan kendala. Tidak dibuat sebagai aplikasi mobile petugas.
+3. Admin/Operator: hanya web. Mengelola data operasional sesuai permission: permintaan, verifikasi petugas, kategori, area/jadwal, mitra/batch, konfigurasi reward, pendanaan/laporan/audit jika tersedia.
+4. Satu akun bisa memiliki beberapa role yang telah diberikan. active_role hanya konteks UI dan tidak pernah dianggap sebagai otorisasi. Backend tetap memvalidasi semua izin.
+C. Dokumen dan sumber kebenaran
+Urutan penggunaan:
+- PRD_WasteLink_Bali.md: tujuan, persona, journey, ruang lingkup produk.
+- HRD_WasteLink_Bali.md: requirement tingkat tinggi, aturan, prioritas.
+- SRS_WasteLink_Bali.md: kebutuhan spesifik dan acceptance criteria.
+- SDD_WasteLink_Bali.md: rancangan teknis dan alur sistem.
+- designweb.md: tampilan dan interaksi web desktop/responsif.
+- designapps.md: desain dan perilaku aplikasi mobile warga.
+- Repository backend + OpenAPI aktual + test backend: sumber teknis faktual untuk endpoint, HTTP method, payload, response, autentikasi, error, pagination, upload, dan permission.
+Jika dokumen berbeda dengan implementasi aktual, jangan membuat asumsi diam-diam. Catat mismatch, pilih integrasi kompatibel dengan backend yang berjalan, dan minta perubahan backend hanya jika kontrak yang diperlukan benar-benar tidak ada atau cacat.
+D. Discovery wajib sebelum coding
+Lakukan inspeksi singkat tapi nyata:
+- Petakan struktur folder dan package manager.
+- Baca package.json, lockfile, konfigurasi TypeScript, lint, test, framework, route, design system, dan code style yang sudah ada.
+- Temukan URL backend lokal dan cara menjalankannya dari README/config, tanpa menampilkan secret.
+- Ambil OpenAPI dari backend yang berjalan bila memungkinkan; jika tidak, periksa schema/router backend yang ada.
+- Buat tabel fitur → endpoint aktual → metode → auth → request/response → error/pagination → status integrasi.
+- Identifikasi autentikasi: cookie HttpOnly atau bearer token; jangan mengubah strategi backend hanya untuk mempermudah frontend.
+- Identifikasi apakah upload memakai multipart, presigned URL, atau metode lain yang benar-benar diimplementasikan.
+- Catat gap, endpoint yang belum ada, atau kontrak belum jelas.
+Jangan mengklaim sudah melakukan verifikasi kalau perintah/test/server tidak benar-benar dijalankan.
+E. Stack dan arsitektur yang disarankan
+- Web: Next.js App Router + TypeScript dengan React; Tailwind CSS jika sesuai repository. Bila frontend sudah punya stack yang sehat, pertahankan stack tersebut kecuali ada alasan kuat dan migrasi yang teruji.
+- Mobile warga: React Native + Expo + TypeScript. Pertahankan framework mobile yang sudah ada bila repository telah menggunakannya.
+- HTTP client: wrapper typed terpusat dengan base URL dari environment, timeout/abort yang tepat, serialisasi konsisten, penanganan 401/403/409/422/429/5xx, dan penanganan network failure.
+- Schema/type: bila mungkin hasilkan tipe dari OpenAPI aktual; jangan memelihara tipe duplikat secara manual tanpa alasan.
+- Form: React Hook Form + Zod atau stack ekuivalen yang sudah dipasang. Validasi UI tidak menggantikan validasi backend.
+- Server state: gunakan library yang sudah ada; jika belum ada, evaluasi TanStack Query untuk cache, invalidasi, retry terkontrol, dan status mutation.
+- UI: komponen reusable terukur; gunakan Lucide atau satu keluarga ikon yang konsisten. Jangan tambah library besar tanpa kebutuhan.
+- Test: unit/component test sesuai stack, Playwright untuk web jika bisa, dan test mobile yang relevan. Test harus memeriksa perilaku nyata, bukan snapshot kosong.
+Struktur yang dapat dipakai jika repository belum memiliki struktur frontend
+apps/
+  web/                    # Next.js: public, user, collector, admin
+  mobile/                 # Expo: user-only mobile app
+packages/
+  api-client/             # client/type/helpers lintas aplikasi, bila build setup mendukung
+  design-tokens/          # warna, spacing, radius, status; token lintas platform
+Jangan memaksakan monorepo atau memindahkan backend bila bentuk repository saat ini sudah sehat. Jika shared package menyebabkan friction dengan Expo/Next.js, prioritaskan struktur sederhana dan konsisten.
+F. Design system — harus konsisten dengan designweb.md dan designapps.md
+Gunakan arah visual “Calm field operations”: bersih, membumi, profesional, mudah discan, dan tidak berlebihan.
+brand-900:       #1D3F35
+brand-700:       #2F6552
+brand-100:       #E8F0E9
+canvas:          #F6F6F1
+surface:         #FFFFFF
+text-primary:    #1E2A25
+text-secondary:  #5D6B63
+border:          #DCE3DD
+warning:         #98631C
+warning-bg:      #FFF4D9
+danger:          #A43F35
+danger-bg:       #FBEAE7
+info:            #315F86
+info-bg:         #EAF2F9
+success:         #276749
+success-bg:      #E7F4EA
+- Gunakan Inter atau sans-serif sistem, tipografi berhierarki, spacing 4/8/12/16/24/32 px, radius 8 px untuk kontrol dan 12–16 px untuk panel.
+- Border lembut lebih utama daripada shadow berat. Tidak perlu gradient.
+- Hindari dashboard berisi grid kartu yang sama semua, glassmorphism, neon, blur dekoratif, animasi yang memperlambat kerja, ilustrasi robot/AI, data chart dummy yang tampak nyata, testimoni fiktif, counter pengguna palsu, dan klaim dampak yang belum dapat dibuktikan.
+- Pakai foto yang relevan hanya bila tersedia dan berlisensi. Jangan menunda fungsi karena aset foto belum tersedia.
+- Status selalu memakai teks eksplisit, bukan warna saja. Bedakan berat perkiraan, berat final, poin tertunda, dan poin terbit.
+- Desktop staff/admin mengutamakan tabel, pencarian, filter, hierarki informasi, dan tindakan yang efisien. Mobile user mengutamakan target sentuh minimal 44 dp, formulir bertahap, navigasi bawah lima item (Beranda, Setor, Aktivitas, Poin, Profil), dan pola native yang wajar.
+- UI utama memakai Bahasa Indonesia; tanggal ditampilkan dengan WITA untuk waktu layanan. Simpan/serialisasikan timestamp sesuai kontrak backend dan konversi zona waktu hanya di lapisan tampilan.
+G. Aturan domain yang tidak boleh dilanggar di frontend
+1. Reward hanya ditampilkan sebagai final setelah backend mengonfirmasi inspeksi/berat dan kelayakan. Jangan menghitung saldo otoritatif di client.
+2. Frontend tidak mengirim nilai points_earned, saldo, role, status verifikasi, atau ownership sebagai otoritas. Payload hanya berisi input yang memang diizinkan oleh kontrak.
+3. Berat bersih yang dihitung untuk membantu petugas di UI tetap harus dikonfirmasi dan dihitung/divalidasi sesuai backend. Jangan membolehkan berat negatif atau bruto lebih kecil dari tara.
+4. Transisi status tidak boleh dibuat berdasarkan asumsi. Tampilkan command hanya jika role, status, dan kontrak mengizinkan; backend tetap menjadi penjaga utama.
+5. Limbah khusus tidak masuk alur setoran standar tanpa jalur penerimaan yang benar-benar tersedia. Beri arahan aman, tanpa mengklaim sistem dapat menangani semua limbah.
+6. Menunggu petugas, Diterima, Dalam penjemputan, Menunggu verifikasi/hasil timbang (jika backend mendukung), dan Selesai harus dibedakan sesuai state machine aktual. Jangan menyatakan material sudah didaur ulang saat baru dijemput atau dikirim.
+7. WastePoints bukan uang tunai kecuali aturan produk dan kontrak resmi menyatakan sebaliknya.
+8. Tombol yang disembunyikan bukan kontrol keamanan. API call harus mengharapkan 401/403 dan menampilkan feedback yang sesuai.
+9. Setiap tindakan mutation harus mencegah double-submit, memberi state loading, feedback berhasil/gagal, dan menghindari penggandaan aksi pada retry. Gunakan idempotency key jika kontrak backend menyediakannya.
+10. Jangan simpan access token/session secret di localStorage jika backend menggunakan cookie HttpOnly. Jangan mencatat token, alamat lengkap, nomor telepon, atau isi sensitif ke console/log.
+H. Standar rekayasa
+- TypeScript ketat; hindari any tanpa alasan terdokumentasi.
+- Hindari satu file komponen raksasa; pisahkan komponen berdasarkan fitur dan tanggung jawab.
+- Hindari abstraksi berlebihan, dependency yang tidak diperlukan, mock API permanen, copy-paste layout, dan hardcoded API URL.
+- Semua state penting mencakup loading, success, empty, error, unauthorized, forbidden, conflict/stale data, serta koneksi gagal bila relevan.
+- Form mempertahankan input ketika gagal jika aman, mengaitkan error ke field, dan tidak kehilangan data karena submit ganda.
+- Pagination, filter, sort, dan pencarian harus mengikuti kontrak yang didukung server. Jangan mengambil semua record lalu memfilter di browser untuk data besar.
+- Jangan menyimpan PII di query string atau local storage tanpa alasan kuat.
+- Gunakan semantic HTML, label field, keyboard navigation, visible focus, kontras memadai, reduced motion, dan teks error yang bisa dibaca screen reader.
+- Jangan menghapus atau mengganti test lama untuk membuat pipeline hijau. Perbaiki implementasi atau perbarui test hanya bila spesifikasi berubah dengan alasan sah.
+- Gunakan environment variables dan .env.example; jangan pernah commit kredensial riil.
+I. Pola kerja tiap tahap
+Untuk setiap tahap:
+1. Baca dan inspeksi file yang diperlukan.
+2. Beri rencana singkat, termasuk asumsi dan kontrak API yang dipakai.
+3. Implementasikan hanya scope tahap tersebut.
+4. Jalankan format/lint, typecheck, test, build atau smoke test yang tersedia.
+5. Perbaiki regresi yang disebabkan oleh perubahanmu.
+6. Laporkan file utama yang berubah, command/test yang benar-benar berjalan dan hasilnya, endpoint yang dipakai, gap yang belum selesai, serta checklist quality gate.
+7. Jangan menandai fitur “selesai” jika hanya UI statis, data mock, tombol inert, atau integrasi belum dibuktikan. Labeli status dengan jujur.
+TAHAP 1 — Repository discovery, arsitektur frontend, design system, dan UI shell
+Prompt
+Mulai bangun fondasi frontend WasteLink Bali. Jangan langsung membuat seluruh fitur bisnis. Audit repository dan kontrak backend, tentukan rancangan implementasi terkecil yang sehat, lalu bangun foundation serta shell yang bisa dijalankan.
+1. Audit dan keputusan awal
+- Lakukan semua discovery wajib dari Prompt Global.
+- Temukan backend yang sudah dibangun dan identifikasi cara membaca OpenAPI. Bila backend aktif, periksa /openapi.json atau dokumentasi yang benar-benar disediakan. Bila tidak aktif, temukan skema router/Pydantic di kode.
+- Buat docs/frontend-api-map.md dengan kolom: fitur, method/path aktual, auth/permission, payload utama, response utama, error/pagination, status integrasi, dan catatan gap.
+- Buat atau perbarui docs/frontend-decisions.md untuk keputusan stack, package manager, routing, strategi auth, design tokens, error handling, dan testing. Jangan membuat keputusan bisnis final.
+- Tentukan apakah repository perlu monorepo atau frontend dapat ditambahkan dalam struktur saat ini. Jangan memindahkan/mengubah backend secara tidak perlu.
+2. Setup engineering
+- Konfigurasikan TypeScript strict, lint, formatter, path alias, environment config terpusat dan validasi environment saat startup.
+- Buat .env.example yang hanya berisi placeholder, misalnya base URL API lokal; jangan menaruh secret.
+- Tambahkan scripts konsisten untuk dev, lint, typecheck, test, build, dan e2e jika stack mendukung.
+- Pastikan error saat environment wajib tidak valid menghasilkan pesan yang berguna, bukan secret yang bocor.
+- Terapkan batas import dan struktur berdasarkan fitur agar domain tidak saling terikat secara tidak perlu.
+3. Design system
+Buat token warna, typography, spacing, radius, focus ring, shadow seperlunya, layout container, status badge, button, input, select, checkbox, dialog/sheet, toast, table, skeleton, empty state, error state, breadcrumb, page header, serta pola konfirmasi aksi sensitif.
+
+Gunakan token yang sama untuk web dan rencanakan padanannya untuk mobile. Jangan sekadar menyalin CSS web ke React Native; token harus dapat dipakai sesuai platform.
+4. Shell halaman
+Bangun:
+- Area publik sederhana: landing/entry, login, register, forgot-password (form dapat diselesaikan di tahap 2; pada tahap ini shell visual dan routing dasar saja).
+- User Web shell: navigasi ringan dan konten yang berorientasi pada aksi “Buat setoran”.
+- Petugas Web shell: sidebar operasional desktop, konteks pos/area, tabel/tugas.
+- Admin Web shell: navigasi admin terkelompok, berbeda dari shell petugas secara permission dan information architecture.
+- Mobile user app shell: struktur layar dasar, bottom navigation Beranda / Setor / Aktivitas / Poin / Profil, safe area, serta styling platform. Jangan membuat mobile app petugas.
+Boleh memakai wastelink_ui_reference.html sebagai inspirasi komposisi, tetapi implementasi tidak boleh sekadar menempel file HTML itu ke aplikasi. Bangun komponen terstruktur dan dapat diakses.
+5. Data preview
+Data mock boleh digunakan hanya sebagai fixture/story/screenshot development yang eksplisit diberi label “Pratinjau data”, diisolasi dari API client, dan tidak aktif sebagai fallback diam-diam saat API gagal. Sediakan mode development yang jelas; jangan menipu user bahwa mock adalah data server.
+Deliverables
+- Fondasi project dapat dijalankan dengan dokumentasi singkat.
+- Struktur routing/layout untuk tiga web workspace dan mobile user app.
+- Design tokens, komponen inti, responsive shell.
+- docs/frontend-api-map.md, docs/frontend-decisions.md, .env.example, dan scripts test.
+- Test minimum untuk token/komponen kritis, route shell, serta pengecekan lint/typecheck.
+Quality gate Tahap 1 — wajib lulus sebelum Tahap 2
+- [ ] Frontend dapat dipasang dari README menggunakan package manager yang benar.
+- [ ] Dev server start dan production build berhasil jika dependencies serta environment tersedia.
+- [ ] Lint dan typecheck lulus, atau blocker eksternal didokumentasikan dengan bukti.
+- [ ] Route tidak saling membocorkan layout User, Petugas, Admin.
+- [ ] Tampilan dasar responsif dan tidak memiliki horizontal overflow pada viewport mobile.
+- [ ] Token warna/spacing dan komponen status konsisten dengan designweb.md/`designapps.md`.
+- [ ] Tidak ada secret di repository dan tidak ada API URL hardcoded.
+- [ ] Map API aktual sudah dibuat; endpoint yang belum ada ditandai jelas.
+TAHAP 2 — Authentication, onboarding, session lifecycle, dan role-aware routing
+Prompt
+Implementasikan alur identitas serta akses frontend dengan kontrak autentikasi aktual backend. Jangan mengasumsikan metode JWT/localStorage, refresh-token, cookie, atau endpoint sebelum memeriksa backend.
+1. Public/auth screens
+Implementasikan sesuai endpoint yang tersedia:
+- Login dengan validasi, show/hide password yang accessible, loading, error generic yang tidak membocorkan keberadaan akun, dan redirect yang aman.
+- Registrasi user/warga dengan field yang benar-benar diminta API.
+- Forgot-password/reset-password hanya bila tersedia. Bila backend belum mendukung, tampilkan status “belum tersedia” atau dokumentasikan gap—jangan membuat sukses palsu.
+- Logout yang benar-benar memanggil mekanisme revocation backend jika tersedia.
+- Handling session expired, 401, 403, rate limit, network error, dan token/session invalid.
+2. Session/auth architecture
+- Buat AuthProvider/store/hook dengan keadaan eksplisit: loading initial session, anonymous, authenticated, session expired.
+- Hindari flash halaman privat ketika sesi belum diverifikasi.
+- Jika backend menggunakan HttpOnly cookie, gunakan konfigurasi credential yang benar dan CSRF strategy sesuai kontrak; token jangan dibaca dari JavaScript.
+- Jika backend menggunakan bearer token, ikuti strategi penyimpanan yang didukung, mitigasi risiko XSS, expiry, refresh dan revocation. Jangan mengarang refresh flow jika tidak ada.
+- Validasi GET /me atau ekuivalen sesuai endpoint aktual. Server adalah sumber kebenaran untuk profil dan roles.
+- Redirect hanya ke internal route allowlisted; cegah open redirect dari parameter next.
+3. Role grants dan switch role
+- Render navigasi berdasarkan role/grant yang benar-benar dikembalikan API.
+- User/Warga merupakan role default bila backend menyatakannya.
+- Role Collector harus disetujui/verifikasi. Sediakan halaman status/pengajuan hanya jika endpoint aktual tersedia.
+- Jika user punya role USER dan COLLECTOR, sediakan switch-role UI yang mengirim command preferensi ke backend bila route tersedia, lalu refresh izin/data query sesuai context.
+- active_role bukan permission. Route guard hanya pengalaman pengguna; API call tetap harus menangani 403.
+- Role Admin diberikan melalui server grant. Tidak boleh ada dropdown development yang memungkinkan user menjadikan dirinya admin pada production.
+- Untuk mobile, dukung fitur warga saja. Role collector tidak boleh membuka workspace operasional pada aplikasi mobile.
+4. Routing safety
+- Route privat memiliki loading guard yang tepat, lalu render sesuai authenticated user/grant.
+- Jika akses ditolak, tampilkan halaman akses terbatas atau redirect yang sesuai; jangan menyembunyikan semua error sebagai 404.
+- Tangani akses langsung ke URL privat, reload, browser back/forward, dan session expired saat formulir.
+- Hindari redirect loop ketika endpoint /me gagal.
+Deliverables
+- Auth/session architecture terdokumentasi.
+- Login/register/reset sesuai capability aktual backend.
+- Route guard UX untuk User, Collector dan Admin web; app mobile warga.
+- Role switch yang tidak mengakibatkan privilege escalation.
+- Test untuk loading/anonymous/authenticated/forbidden/session expired dan role tanpa grant.
+Quality gate Tahap 2
+- [ ] Login valid sukses memakai backend aktual.
+- [ ] Kredensial salah dan error jaringan menampilkan feedback aman.
+- [ ] Sesi bertahan/revoke sesuai strategi backend yang nyata.
+- [ ] Pengguna tanpa role tidak dapat melihat menu/aksi yang tidak relevan; server 403 ditangani.
+- [ ] User tidak dapat mengubah state client untuk mendapatkan akses admin/collector.
+- [ ] Role switch tidak menghapus session, mengirim role sembarang, atau meninggalkan cache role sebelumnya.
+- [ ] Mobile hanya menampilkan fitur User/Warga.
+- [ ] Test auth/permission lulus atau ada blocker nyata yang didokumentasikan.
+TAHAP 3 — User Web: setoran, tracking, panduan, WastePoints, profil, dan notifikasi
+Prompt
+Implementasikan pengalaman User/Warga pada web berdasarkan designweb.md, SRS, dan API map. Prioritaskan perjalanan end-to-end warga; jangan hanya membangun dashboard statis.
+1. Dashboard warga
+- Tampilkan ringkasan yang benar-benar berasal dari API bila endpoint tersedia: setoran aktif, histori, berat terverifikasi, saldo WastePoints, serta shortcut “Buat setoran”.
+- Jika data tidak ada, tampilkan empty state ramah dengan tindakan yang sesuai.
+- Jangan menampilkan angka demo sebagai fakta produksi. Jika endpoint ringkasan tidak tersedia, komposisikan dari endpoint list hanya bila pagination/performance memungkinkan; bila tidak, catat kebutuhan endpoint agregasi.
+- Bedakan data “belum diverifikasi” dan “final”.
+2. Flow pembuatan setoran bertahap
+Bangun wizard accessible dan responsive, idealnya:
+1. Pilih kategori: organik basah, anorganik bernilai, residu, limbah khusus.
+2. Pilih/isi detail material, kondisi, perkiraan jumlah/volume, catatan, serta foto jika backend mendukung.
+3. Pilih alamat/area dan jadwal/slot yang valid dari API aktual.
+4. Review seluruh input dan tampilkan estimasi yang jelas bukan angka final.
+5. Konfirmasi submit, cegah double-submit, dan tampilkan hasil server yang benar.
+Aturan:
+- Input mengikuti schema backend, termasuk field mandatory, enum, batas, ID kategori/alamat/slot, dan timezone.
+- Jangan percaya user_id, status, berat final, atau poin dari payload client kecuali kontrak secara eksplisit memerlukan identitas server-side yang aman; gunakan principal sesi.
+- Untuk limbah khusus, jangan submit melalui alur biasa tanpa route/rule penerimaan yang confirmed. Tampilkan penjelasan aman serta arahan bantuan.
+- Pilihan kategori dan slot harus menggunakan sumber server, dengan loading/empty/error state.
+- Saat validasi gagal, tampilkan error field dan pertahankan input yang aman.
+- Jika slot penuh/409 conflict, minta user memilih ulang, jangan retry mutation secara buta.
+3. Setoran saya dan detail tracking
+- List history dengan status label, timestamp, kategori, jadwal, search/filter/pagination jika didukung API.
+- Detail setoran menampilkan timeline berdasarkan state backend, detail jadwal/lokasi sesuai privacy, hasil inspeksi/berat dan bukti jika user berhak melihatnya, serta alasan reject/reschedule/dispute bila ada.
+- Tampilkan tombol cancel/reschedule hanya jika status, grant, dan endpoint mengizinkan.
+- Setelah mutation sukses, invalidate/refetch query yang tepat; hindari optimistic status yang dapat menampilkan sukses palsu.
+4. Panduan, WastePoints, dampak dan benefit
+- Panduan kategori bersumber dari master data API, termasuk accepted materials/rules yang relevan.
+- WastePoints balance dan ledger diambil dari backend. Jangan menghitung saldo otoritatif dari daftar page yang mungkin terpotong.
+- Benefit/redemption hanya tampil aktif bila katalog dan endpoint redemption benar-benar tersedia. Hindari tombol palsu atau penukaran yang hanya mengurangi poin di UI.
+- Tampilkan label bahwa poin bukan uang tunai jika sesuai kebijakan produk.
+- Dampak hanya menampilkan metrik yang punya definisi, source dan periode jelas. Jangan menyimpulkan CO₂/lingkungan jika backend tidak menyediakan metodologi terverifikasi.
+5. Profil, bantuan, notifikasi
+- Profil pribadi hanya field yang dapat dibaca/diubah sesuai endpoint.
+- Notification list/read action sesuai API.
+- Bantuan/komplain hanya bisa submit jika backend mendukung; jika belum, tampilkan opsi kontak yang disepakati atau tandai belum tersedia, jangan membuat data tersimpan palsu.
+- Pastikan konten, status, dan label menggunakan bahasa Indonesia yang singkat dan jelas.
+Deliverables
+- User Web workflow berbasis API: dashboard → create pickup → detail/tracking → history → poin.
+- Form schema yang selaras dengan payload backend.
+- Data loading, empty, error, permission, conflict dan success states.
+- Komponen reusable untuk pickup status, timeline, waste category, weight summary, ledger item.
+- Test minimal untuk form wizard, validasi, submit error, tracking dan balance/ledger.
+Quality gate Tahap 3
+- [ ] Pengguna dapat membuat request melalui endpoint aktual sampai response sukses.
+- [ ] Request yang gagal tidak membuat UI mengklaim telah tersimpan.
+- [ ] Data list/detail hanya dapat diakses sesuai ownership backend; UI menangani 403/404.
+- [ ] Status dan angka final dari backend, bukan simulasi lokal.
+- [ ] Kategori/slot mengambil data server dan konflik dipulihkan dengan baik.
+- [ ] Berat/poin perkiraan dan final dibedakan.
+- [ ] Responsive layout bekerja di desktop/tablet/mobile browser.
+- [ ] Test alur utama dan error path lulus.
+TAHAP 4 — Petugas Web: task queue, assignment, inspeksi, penimbangan, bukti, dan kendala
+Prompt
+Bangun workspace desktop untuk Petugas Sampah. Penggunaan operasional berpusat pada komputer di pos operasional/pos penjagaan sesuai model layanan, bukan pada aplikasi mobile khusus petugas. Gunakan designweb.md bagian Petugas serta kontrak backend aktual.
+1. Dashboard dan task queues
+- Ringkasan tugas yang relevan: tersedia, tugas saya, dalam proses, selesai hari ini bila endpoint agregasi mendukung.
+- Tabel/list tugas menyediakan pencarian, filter kategori, area, jadwal, status dan pagination sesuai kontrak.
+- Tampilkan lokasi dan kontak hanya bagi aktor yang berhak dan pada status ketika informasi diperlukan.
+- Sediakan empty/loading/error/retry states; jangan mengganti network failure dengan daftar tugas kosong tanpa penjelasan.
+2. Accept, status dan concurrency
+- Aksi accept harus memanggil endpoint server yang benar dan menampilkan hasil aktual.
+- Tangani race condition: jika petugas lain sudah menerima, tampilkan status terbaru dan refresh query. Jangan menampilkan tugas seolah berhasil diambil.
+- Tampilkan hanya state transition yang diizinkan server/state machine.
+- Sediakan alasan untuk reject, gagal jemput, reschedule, atau exception bila backend mendukung.
+- Gunakan idempotency key jika backend memintanya. Hindari auto-retry mutation yang tidak idempotent.
+3. Inspeksi, penimbangan, dan kualitas
+- Form inspeksi sesuai schema aktual: kategori aktual bila dapat dikoreksi, kondisi/kontaminasi, catatan, item, penolakan atau review reason.
+- Penimbangan memasukkan berat bruto, tara dan/atau berat bersih mengikuti kontrak backend. Validasi angka finite, non-negatif, satuan kg, decimal precision, tara tidak melebihi bruto bila kedua nilai digunakan.
+- Jelaskan hasil perhitungan pada UI. Server tetap sumber final.
+- Beri status “belum diverifikasi” sampai backend mengonfirmasi.
+- Jangan menyediakan AI/image estimation sebagai dasar berat. Jika AI helper tidak termasuk scope aktual, jangan implementasikan.
+4. Upload bukti dan penyelesaian
+- Periksa mekanisme upload aktual: multipart, object storage/presigned URL, media metadata, batas ukuran, accepted MIME, dan finalization.
+- Tampilkan progress, retry hanya bila aman, preview, remove-before-submit jika diizinkan, upload failure, dan bukti yang masih pending.
+- Jangan mengirim local file path ke API; kirim file/metadata sesuai kontrak.
+- Tombol “Selesaikan tugas” hanya enabled jika prasyarat backend terpenuhi. Server akan validasi ulang.
+- Saat response sukses, refetch detail, queue, histori, dan status pickup terkait.
+5. Keselamatan kerja
+- Sediakan panduan dan pesan keselamatan untuk limbah tak dikenal/khusus, material terkontaminasi, akses lokasi yang gagal, atau situasi tidak aman.
+- Jangan mendorong petugas menerima/membuka/menangani limbah berbahaya tanpa jalur yang sesuai. Catat exception jika backend mendukung.
+Deliverables
+- Petugas dashboard dan task queue berbasis API.
+- Detail tugas, menerima/menolak tugas, status workflow, inspeksi, timbang, upload evidence, complete flow sesuai backend.
+- Konfirmasi untuk aksi sensitif, dan feedback untuk race conflict.
+- Test API-driven task state, weight validation, evidence upload errors, conflict dan permission.
+Quality gate Tahap 4
+- [ ] Collector yang belum verified tidak dapat mengakses operasional; tangani 403 dari server.
+- [ ] Accept task tidak menunjukkan sukses jika server menolak conflict.
+- [ ] Semua transisi status sesuai endpoint/state machine aktual.
+- [ ] Penimbangan tidak menerima nilai invalid; final hasil server.
+- [ ] Upload menggunakan metode yang benar dan kegagalan upload tidak menandai task selesai.
+- [ ] Tidak ada tindakan mengedit ledger atau reward dari Petugas.
+- [ ] Desktop layout dapat digunakan dengan keyboard dan tabel mudah discan.
+- [ ] Test workflow petugas lulus.
+TAHAP 5 — Admin Web: master data, verifikasi petugas, mitra/batch, WastePoints, pendanaan, audit dan laporan
+Prompt
+Bangun workspace Admin/Operator web sebagai area pengelolaan operasional. UI tidak boleh mengasumsikan setiap Admin memiliki semua permission. Gunakan role/permission dari backend, dan jangan menampilkan operasi yang belum didukung seolah aktif.
+1. Dashboard dan operational overview
+- Ringkasan permintaan, petugas, berat terverifikasi, batch dan alert menggunakan sumber API nyata.
+- Chart dan KPI mempunyai label metric, timeframe, unit, serta definisi.
+- Jika API belum memiliki aggregate endpoint, hindari mengambil semua record untuk dihitung di browser. Buat dokumentasi gap dan minta endpoint server-side bila memang diperlukan.
+2. Permintaan dan verifikasi petugas
+- Tampilkan daftar permintaan, filter, detail status dan reassignment hanya jika sesuai permission.
+- Buat halaman pengajuan petugas: detail informasi yang diperbolehkan, approve/reject, reason wajib untuk reject bila kontrak mengharuskannya, pending/review/error state.
+- Setelah operasi, refresh grant/query dan jelaskan jika role memerlukan login ulang atau refresh session sesuai mekanisme backend.
+- Jangan memberi akses petugas di client sebelum grant backend menyatakan disetujui.
+3. Master data
+- Kategori/sort instructions, material acceptance rules, area, jadwal/slot, dan capacity management mengikuti endpoint/schema yang tersedia.
+- Gunakan form create/edit dengan validasi, unique conflict, status active/inactive, pagination/filter, dan penanganan stale data.
+- Konfigurasi berdampak ke request aktif harus diperlakukan dengan hati-hati. Jangan mengubah historis secara diam-diam.
+4. Mitra, batch, delivery
+- Tampilkan mitra, spesifikasi penerimaan, batch material, alokasi/offer, delivery, dan receipt confirmation sesuai API aktual.
+- Bedakan terkumpul, ditawarkan, dialokasikan, dikirim, diterima mitra dan benar-benar diproses. Jangan samakan status tersebut.
+- Catat selisih/dispute bila tersedia. Jangan menampilkan pihak atau material sebagai verified tanpa sumbernya.
+5. WastePoints dan keuangan
+- Aturan reward/rule version hanya dapat dikelola oleh permission yang relevan. Form harus jelas tentang berlaku mulai, kategori, syarat kualitas, batas, dan perubahan versi jika schema menyediakannya.
+- Hindari edit yang menimpa historis. Gunakan API versioning/activation aktual.
+- Point adjustment, jika tersedia, harus membutuhkan permission khusus, alasan, konfirmasi, dan audit trail. Jangan memberikan tombol umum “edit saldo”.
+- Pendanaan/rekonsiliasi menampilkan status, sumber, referensi dan periode sesuai data. Jangan membangun pembayaran real uang atau dompet jika belum didukung backend.
+6. Reports, exports, audit
+- Laporan difilter periode/area/status menggunakan API.
+- CSV export memakai endpoint dan permission khusus. Tunjukkan progres/failure dan jangan menganggap export berhasil tanpa response.
+- Audit log dibaca saja kecuali backend benar-benar mendukung suatu aksi. Hindari mengedit/menghapus audit record dari UI.
+- Batasi data personal dan masking sesuai permission.
+Deliverables
+- Admin dashboard, operational tables dan filters.
+- Collector application review, category/schedule management, partners/batches, reward rules, finance/report/audit pages sesuai API availability.
+- Reusable table/form/action confirmation dan permission boundary.
+- Test unauthorized controls, validation/conflict, admin mutation dan reporting.
+Quality gate Tahap 5
+- [ ] Admin tidak bisa memperoleh permission hanya dengan role flag di browser.
+- [ ] Setiap route/mutation sensitif menangani backend 403/409.
+- [ ] CRUD/master data menggunakan schema yang sesuai OpenAPI.
+- [ ] Rule change dan point adjustment tidak menghapus jejak historis.
+- [ ] KPI dan chart tidak menggunakan data palsu dalam mode produksi.
+- [ ] Data keuangan, PII dan export dikontrol berdasarkan permission.
+- [ ] Feature yang API-nya belum ada ditandai tidak tersedia, bukan tombol palsu.
+- [ ] Test permission/CRUD/audit/export lulus sesuai capability backend.
+TAHAP 6 — Aplikasi mobile User/Warga: setoran, tracking, WastePoints, notifikasi, offline dan izin perangkat
+Prompt
+Implementasikan aplikasi mobile khusus warga sesuai designapps.md. Gunakan React Native + Expo + TypeScript jika belum ada stack mobile yang sehat. Jangan membuat aplikasi mobile untuk Petugas atau Admin. Gunakan API client dan domain rules yang sama secara konseptual dengan User Web, tanpa mengkopi logika bisnis server ke client.
+1. Foundation mobile
+- Pastikan navigasi stack/tab, safe area, keyboard avoidance, dynamic text sizing, loading skeleton, empty/error, network state dan deep links bekerja.
+- Bottom navigation tetap: Beranda, Setor, Aktivitas, Poin, Profil.
+- Target sentuh minimal 44 dp baseline. Jangan menempatkan aksi destructive dekat aksi utama tanpa jarak/konfirmasi yang cukup.
+- Ikuti platform pattern (Android/iOS) dan design token; UI harus nyaman untuk satu tangan dan Bahasa Indonesia mudah dipahami.
+2. Auth dan sesi
+- Integrasikan strategi auth backend yang sama dan aman. Jangan menambahkan penyimpanan token raw jika tidak tepat untuk skema auth yang dipilih.
+- Tangani first launch, login/register, session expire, logout, notifikasi permission, dan direct/deep link sesuai kemampuan backend.
+- Role yang dipakai adalah User/Warga. Jika akun memiliki role petugas, app tetap bukan tempat menjalankan tugas operasional petugas.
+3. Setoran mobile
+Buat flow bertahap dengan state draft lokal yang aman:
+1. Kategori dan penjelasan pemilahan.
+2. Detail material dan foto dari kamera/galeri bila endpoint upload tersedia.
+3. Lokasi dari alamat tersimpan/manual; geolocation hanya dengan izin eksplisit dan ketika diperlukan.
+4. Slot/jadwal dari API aktual.
+5. Ringkasan dan submit, dengan penjelasan status dan aturan limbah khusus.
+6. Confirmation screen menampilkan reference ID dan langkah selanjutnya yang dikembalikan server.
+   - Jika aplikasi ditutup ketika form masih draft, jangan menganggap request sudah tersimpan di server.
+   - Saat offline, izinkan hanya aksi yang aman secara lokal (misalnya menyimpan draft yang diberi label belum terkirim). Jangan mengantre mutation diam-diam kecuali mekanisme idempotent/sync benar-benar dirancang.
+   - Jangan meminta izin lokasi, kamera, galeri atau push notification sebelum user memahami manfaatnya.
+4. Tracking, activity, points, profile
+- Detail tracking dan histori berasal dari server.
+- Deep link dari notifikasi membuka detail setoran yang benar dan tetap memeriksa auth/ownership.
+- Balance dan ledger poin merupakan data server.
+- Benefit/redemption hanya aktif bila backend mendukung.
+- Profile, bantuan, notification inbox dan pengaturan menyesuaikan endpoint yang benar-benar tersedia.
+5. Push notifications
+- Pertama, gunakan in-app notification API jika tersedia.
+- Push hanya diimplementasikan bila ada dukungan backend/provider/token registration yang nyata dan konfigurasi lingkungan tersedia. Jangan mengaku push aktif jika hanya local mock.
+- Minta izin dengan alasan, sediakan fallback in-app, jangan berulang kali memunculkan prompt jika ditolak.
+6. Gangguan jaringan dan privasi
+- UI harus membedakan cached content, draft lokal, request pending, request sukses tersimpan, dan request gagal.
+- Hindari double submit saat jaringan lambat; tampilkan retry yang aman dan gunakan idempotency bila backend mendukung.
+- Jangan simpan data lokasi/foto lebih lama dari yang diperlukan; hormati izin dan mekanisme pembatalannya.
+Deliverables
+- Mobile user app yang dapat dijalankan lewat Expo.
+- Auth, dashboard, create pickup, tracking/history, points, guide, profile, notification sesuai backend.
+- States untuk camera/location/network/session dan aksesibilitas.
+- Test alur utama dan error/retry; dokumentasi cara start Android/iOS/web simulator bila didukung.
+Quality gate Tahap 6
+- [ ] App dapat dijalankan melalui script terdokumentasi dan konfigurasi .env yang aman.
+- [ ] Warga dapat melihat/mengajukan setoran menggunakan API aktual.
+- [ ] Offline draft dibedakan jelas dari request yang benar-benar tersimpan.
+- [ ] Location/camera/notification permission diminta sesuai konteks dan mempunyai fallback.
+- [ ] Tracking dan WastePoints membaca API, bukan state hardcoded.
+- [ ] Tidak ada alur tugas Petugas pada mobile app.
+- [ ] Deep link memeriksa session/ownership dan tidak membocorkan detail pada lock screen secara berlebihan.
+- [ ] Test lint/typecheck/test mobile lulus atau blocker dicatat.
+TAHAP 7 — Integrasi penuh, end-to-end test, accessibility, performance, security review, dan release readiness
+Prompt
+Lakukan hardening dan verifikasi integrasi seluruh frontend. Jangan tambah fitur besar baru sebelum alur yang sudah dibangun stabil. Jalankan test nyata dan perbaiki issue yang ditemukan.
+1. API contract verification
+- Cocokkan semua API call yang digunakan di Web dan Mobile dengan OpenAPI aktual: method/path, request schema, response schema, status code, auth, permission, pagination, timezone, file upload, idempotency dan error format.
+- Buat matrix docs/frontend-api-map.md final dengan status implemented/tested/blocked.
+- Pastikan setiap mutation memvalidasi response dan error sesuai schema. Jangan menyamakan semua response sukses menjadi boolean tanpa membaca payload yang dibutuhkan.
+- Pastikan no UI mock fallback ketika API gagal. Fixture hanya untuk Storybook/development dan harus eksplisit.
+2. End-to-end journeys minimum
+Test seluruh perjalanan berikut dengan test data terkontrol atau backend test environment:
+
+Warga Web/Mobile
+1. Login.
+2. Memuat kategori dan jadwal.
+3. Membuat setoran dengan input valid.
+4. Melihat nomor referensi dan status dari response server.
+5. Membuka riwayat/detail pickup.
+6. Melihat berat final dan poin hanya setelah backend mengonfirmasi.
+7. Menangani 422 validation, 409 conflict/slot penuh, offline dan 401 session expiry.
+Petugas Web
+1. Collector belum diverifikasi menerima 403 dan tidak dapat menjalankan operasi.
+2. Collector terverifikasi memuat task queue.
+3. Menerima task; konflik dengan petugas lain ditangani.
+4. Melakukan inspeksi, berat dan bukti.
+5. Penyelesaian hanya sukses bila backend mengonfirmasi semua prasyarat.
+Admin Web
+1. Meninjau pengajuan petugas.
+2. Mengubah master data hanya jika diizinkan.
+3. Meninjau rule/ledger tanpa mengedit record historis secara diam-diam.
+4. Membuka laporan, export atau audit sesuai permission.
+5. Memastikan role admin terbatas tidak mendapat fungsi finance/sensitive yang tidak diberi.
+3. Security review frontend
+- Cari XSS/unsafe HTML rendering, open redirects, secret/token leakage, PII in logs/URLs/storage, permissive CORS assumptions, incorrect cookie credentials/CSRF assumptions, permission by client-only role, hidden sensitive fields, IDOR through cached data, and accidental production mock mode.
+- Bersihkan cache query ketika logout atau berganti principal/role. Jangan tampilkan data akun lama saat session switch.
+- Pastikan error/log tidak menampilkan stack trace atau data sensitif.
+- Validasi upload file type/size di client untuk UX, namun jangan menganggap validasi client sebagai kontrol keamanan.
+- Cek dependency vulnerabilities menggunakan command yang sesuai package manager bila tersedia; dokumentasikan advisories dan tindakan.
+4. Accessibility and responsive review
+- Keyboard-only walkthrough pada web: focus order, skip link, modal trap/return focus, label, error announcement, table semantics, action name, visible focus.
+- Periksa contrast status/badge, dark/forced color jika target, text zoom/dynamic type, reduced motion dan screen reader labels.
+- Test viewport setidaknya: mobile 360–390 px, tablet sekitar 768 px, desktop 1280 px atau target setara. Tidak ada horizontal overflow kecuali tabel yang memiliki container scroll terkontrol.
+- Mobile: Android/iOS safe area, keyboard muncul, form validation, tap targets, rotation/resume, permission denied, network switching.
+5. Performance and reliability
+- Hindari request waterfall tidak perlu, duplicate queries, refetch looping, huge list tanpa pagination, image payload besar, dan bundle dependencies tidak terpakai.
+- Gunakan loading states yang stabil; jangan animasikan data table berulang tanpa kebutuhan.
+- Set timeout, abort/cancel query saat route berubah, dan retry hanya untuk request aman/idempotent.
+- Pastikan UI tak menampilkan data stale sebagai final setelah mutation. Terapkan invalidasi/refetch yang sesuai.
+- Review empty/error/success/loading/unauthorized/forbidden/conflict/offline states untuk setiap fitur utama.
+6. Release docs
+Buat/perbarui:
+- README.md atau docs/frontend-setup.md untuk install, env, dev, lint, typecheck, unit test, e2e, build dan debugging.
+- .env.example tanpa secret.
+- docs/frontend-api-map.md final.
+- docs/frontend-decisions.md dan keputusan terbuka.
+- Test account hanya pada environment lokal, tidak hardcoded dalam production.
+- Instruksi run web dan mobile secara terpisah, serta cara set API base URL yang tepat pada emulator (localhost desktop bukan selalu localhost perangkat).
+7. Final report
+Laporkan dengan format:
+1. Fitur web dan mobile yang benar-benar selesai.
+2. Endpoint aktual yang terhubung.
+3. Perintah yang dijalankan dan hasil lint/typecheck/test/e2e/build.
+4. Issue yang ditemukan dan perbaikannya.
+5. Hal yang belum tersedia di backend atau masih blocked.
+6. Risiko yang tersisa dan konfigurasi deploy yang dibutuhkan.
+7. Checklist quality gate PASS/PARTIAL/FAIL dengan bukti.
+Quality gate Tahap 7 — definisi siap integrasi/demo
+- [ ] Build web dan mobile lulus untuk target yang disepakati.
+- [ ] Lint, typecheck dan test suite lulus tanpa menutupi test yang gagal.
+- [ ] E2E utama membuktikan request ke backend, bukan fixture lokal.
+- [ ] Seluruh endpoint penting cocok dengan OpenAPI aktual.
+- [ ] Semua role/permission edge case ditangani dan server tetap sumber otorisasi.
+- [ ] Error, loading, empty, stale, network, 401/403/409/422 state ada untuk workflow penting.
+- [ ] UI tidak memalsukan poin, berat final, penyelesaian task, receipt partner, angka pendanaan atau dampak.
+- [ ] Aksesibilitas dan responsive smoke test selesai.
+- [ ] Tidak ada secret yang ter-commit; .env.example aman.
+- [ ] Setup/release docs cukup jelas untuk developer lain menjalankan project dari awal.
+Definition of Done lintas tahap
+Sebuah fitur hanya boleh dinyatakan selesai jika:
+1. Requirement dan API contract-nya dapat ditelusuri.
+2. UI states lengkap dan tidak menipu saat loading/gagal.
+3. Data berasal dari backend aktual pada mode normal, bukan mock permanen.
+4. Validasi client sesuai schema dan backend tetap menjadi authority.
+5. Permission check server ditangani; client-side gating hanya untuk UX.
+6. Lint/typecheck/test terkait dijalankan dan hasilnya dilaporkan jujur.
+7. Responsif dan accessible pada konteks perangkatnya.
+8. Tidak menambah kebijakan bisnis, harga, poin, role atau integrasi eksternal tanpa persetujuan.
+9. Dokumentasi dan env example diperbarui jika dibutuhkan.
+10. Tidak ada TODO kritis yang disembunyikan atau tombol yang tampak bekerja padahal belum terhubung.
+Checklist singkat sebelum menyerahkan frontend
+- [ ] User Web dan User Mobile sama-sama mendukung alur setoran warga sesuai capability backend.
+- [ ] Petugas dan Admin hanya menggunakan web operasional.
+- [ ] Setiap menu admin menyesuaikan permission yang benar.
+- [ ] Status, poin dan berat bersumber dari API dan tidak dikarang.
+- [ ] Tidak ada tombol “dummy-success”.
+- [ ] Error API mudah dipahami dan tidak membocorkan detail teknis.
+- [ ] Design system konsisten dan tidak terasa seperti template AI generik.
+- [ ] Semua build/test yang diklaim benar-benar dijalankan.
+
+prototipe dan keperluan contoh ui ada di folder docs
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-10-29T20:29:24+08:00.
+</ADDITIONAL_METADATA>
