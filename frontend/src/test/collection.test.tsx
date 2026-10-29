@@ -105,7 +105,7 @@ describe("StatusBadge Backend State Machine Mapping", () => {
 });
 
 describe("NewDepositPage Component Rendering", () => {
-  it("renders category choices and slot selections", async () => {
+  it("renders service modes, category choices and slot selections", async () => {
     render(
       <ToastProvider>
         <AuthProvider>
@@ -115,13 +115,36 @@ describe("NewDepositPage Component Rendering", () => {
     );
 
     expect(
-      await screen.findByText(/1\. Pilih Kategori Sampah Terpilah/i)
+      await screen.findByText(/1\. Jalur Penyerahan Sampah/i)
     ).toBeDefined();
     expect(
-      screen.getByText(/2\. Alamat Penjemputan & Jadwal Slot Banjar/i)
+      screen.getByText(/2\. Pilih Kategori Sampah Terpilah/i)
+    ).toBeDefined();
+    expect(
+      screen.getByText(/3\. Alamat Penjemputan \/ Asal & Jadwal Slot Banjar/i)
     ).toBeDefined();
     expect(
       screen.getByRole("button", { name: /kirim permintaan setoran/i })
     ).toBeDefined();
+  });
+
+  it("supports creating drop-off requests and idempotency keys", async () => {
+    const cats = await collectionService.getCategories();
+    const validCat = cats.find((c) => c.category_type !== "SPECIAL")!;
+    const idempotencyKey = "idem_test_web_001";
+
+    const result = await collectionService.createPickupRequest({
+      category_id: validCat.id,
+      address_id: "addr_default_01",
+      slot_id: "slot_01",
+      service_mode: "DROP_OFF",
+      idempotency_key: idempotencyKey,
+      estimated_weight_kg: 5.0,
+      notes: "Setoran mandiri ke pos",
+    });
+
+    expect(result).toBeDefined();
+    expect(result.status).toBe("PENDING_ASSIGNMENT");
+    expect(result.service_mode).toBe("DROP_OFF");
   });
 });

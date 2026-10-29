@@ -67,6 +67,8 @@ export interface PickupRequest {
   address_id: string;
   slot_id: string;
   status: PickupStatus;
+  service_mode?: "PICKUP" | "DROP_OFF";
+  idempotency_key?: string | null;
   assigned_collector_id: string | null;
   estimated_weight_kg: number | null;
   actual_weight_kg?: number | null;

@@ -114,6 +114,12 @@ class PickupRequest(Base, TimestampMixin):
     status: Mapped[str] = mapped_column(
         String(32), default=PickupStatus.SUBMITTED.value, nullable=False, index=True
     )
+    service_mode: Mapped[str] = mapped_column(
+        String(32), default="PICKUP", nullable=False, index=True
+    )
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     assigned_collector_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
@@ -153,6 +159,8 @@ class PickupRequest(Base, TimestampMixin):
         Index("ix_pickups_area_status", "service_area_id", "status"),
         Index("ix_pickups_reporter_status", "reporter_user_id", "status"),
         Index("ix_pickups_collector_status", "assigned_collector_id", "status"),
+        Index("ix_pickups_reporter_idempotency", "reporter_user_id", "idempotency_key"),
+        Index("ix_pickups_service_mode", "service_mode"),
     )
 
 

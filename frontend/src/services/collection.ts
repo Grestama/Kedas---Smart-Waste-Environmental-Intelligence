@@ -213,6 +213,8 @@ export const collectionService = {
         address_id: payload.address_id,
         slot_id: payload.slot_id,
         status: "PENDING_ASSIGNMENT",
+        service_mode: payload.service_mode || "PICKUP",
+        idempotency_key: payload.idempotency_key || null,
         assigned_collector_id: null,
         estimated_weight_kg: payload.estimated_weight_kg || 3.0,
         notes: payload.notes || null,

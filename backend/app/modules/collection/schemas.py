@@ -62,6 +62,15 @@ class PickupCreateRequest(BaseModel):
     slot_id: str = Field(description="ID of active collection slot")
     estimated_weight_kg: Decimal | None = Field(default=None, ge=0, le=1000)
     notes: str | None = Field(default=None, max_length=500)
+    service_mode: str = Field(
+        default="PICKUP",
+        description="Mode layanan: 'PICKUP' (dijemput armada trike) atau 'DROP_OFF' (setor mandiri ke TPS3R)",
+    )
+    idempotency_key: str | None = Field(
+        default=None,
+        max_length=64,
+        description="Kunci idempotensi unik dari klien untuk mencegah request ganda pada retry jaringan",
+    )
 
 
 class PickupStatusEventResponse(BaseModel):
@@ -86,6 +95,8 @@ class PickupResponse(BaseModel):
     address_id: str
     slot_id: str
     status: str
+    service_mode: str = "PICKUP"
+    idempotency_key: str | None = None
     assigned_collector_id: str | None = None
     estimated_weight_kg: Decimal | None = None
     notes: str | None = None

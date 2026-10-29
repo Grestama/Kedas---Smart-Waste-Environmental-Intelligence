@@ -112,6 +112,7 @@ export function NewDepositScreen({ onSuccess, onCancel }: NewDepositScreenProps)
 
   // Form State
   const [selectedCategory, setSelectedCategory] = useState<WasteCategory | null>(CATEGORIES[0]);
+  const [serviceMode, setServiceMode] = useState<"PICKUP" | "DROP_OFF">("PICKUP");
   const [materialDetail, setMaterialDetail] = useState<string>("Plastik PET Bening (Botol Air Mineral)");
   const [estimatedWeightKg, setEstimatedWeightKg] = useState<string>("3.5");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -175,12 +176,15 @@ export function NewDepositScreen({ onSuccess, onCancel }: NewDepositScreenProps)
 
     setIsSubmitting(true);
     const weightNum = parseFloat(estimatedWeightKg) || 2.0;
+    const idempotencyKey = `wlb_mob_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 9)}`;
 
     const payload = {
       category_id: selectedCategory.id,
       address_id: selectedAddress.id,
       slot_id: selectedSlot.id,
       estimated_weight_kg: weightNum,
+      service_mode: serviceMode,
+      idempotency_key: idempotencyKey,
       notes: `${materialDetail}. ${notes}`.trim(),
     };
 
@@ -370,12 +374,60 @@ export function NewDepositScreen({ onSuccess, onCancel }: NewDepositScreenProps)
           </View>
         )}
 
-        {/* STEP 3: LOKASI PENJEMPUTAN */}
+        {/* STEP 3: METODE & LOKASI PENJEMPUTAN */}
         {currentStep === 3 && (
           <View>
-            <Text style={styles.sectionTitle}>Pilih Titik Penjemputan</Text>
+            <Text style={styles.sectionTitle}>Pilih Jalur & Titik Penyerahan</Text>
             <Text style={styles.sectionSubtitle}>
-              Armada trike beroperasi melayani wilayah Banjar Sukawati.
+              Pilih apakah dijemput armada motor roda tiga banjar atau diserahkan langsung ke pos TPS3R.
+            </Text>
+
+            {/* Service Mode Selector */}
+            <View style={{ flexDirection: "row", gap: spacing.sm, marginBottom: spacing.md }}>
+              <TouchableOpacity
+                style={[
+                  styles.cardOption,
+                  { flex: 1, marginBottom: 0 },
+                  serviceMode === "PICKUP" && styles.cardOptionSelected,
+                ]}
+                onPress={() => setServiceMode("PICKUP")}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: serviceMode === "PICKUP" }}
+              >
+                <Text style={[styles.cardTitle, serviceMode === "PICKUP" && styles.cardTitleSelected]}>
+                  Jemput Trike
+                </Text>
+                <Text style={styles.cardDesc}>Dijemput di rumah</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.cardOption,
+                  { flex: 1, marginBottom: 0 },
+                  serviceMode === "DROP_OFF" && styles.cardOptionSelected,
+                ]}
+                onPress={() => setServiceMode("DROP_OFF")}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: serviceMode === "DROP_OFF" }}
+              >
+                <Text style={[styles.cardTitle, serviceMode === "DROP_OFF" && styles.cardTitleSelected]}>
+                  Setor Mandiri
+                </Text>
+                <Text style={styles.cardDesc}>Ke pos TPS3R</Text>
+              </TouchableOpacity>
+            </View>
+
+            {serviceMode === "DROP_OFF" && (
+              <View style={[styles.b3AlertBanner, { backgroundColor: "#E7F4EA", borderColor: "#BCE1C7", marginBottom: spacing.md }]}>
+                <Text style={[styles.b3AlertTitle, { color: "#276749" }]}>Pos Penerimaan TPS3R Sukawati</Text>
+                <Text style={[styles.b3AlertBody, { color: "#276749" }]}>
+                  Bawa sampah terpilah langsung ke workstation timbang TPS3R Sukawati (Senin–Sabtu 08:00–15:00 WITA).
+                </Text>
+              </View>
+            )}
+
+            <Text style={[styles.sectionSubtitle, { fontWeight: "600", color: colors.textPrimary, marginBottom: spacing.xs }]}>
+              {serviceMode === "PICKUP" ? "Alamat Penjemputan:" : "Alamat Asal Sampah Warga:"}
             </Text>
 
             {SAVED_ADDRESSES.map((addr) => {
@@ -462,6 +514,13 @@ export function NewDepositScreen({ onSuccess, onCancel }: NewDepositScreenProps)
             </Text>
 
             <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Jalur Penyerahan</Text>
+                <Text style={styles.summaryValue}>
+                  {serviceMode === "DROP_OFF" ? "Setor Mandiri (Pos TPS3R)" : "Jemput di Rumah (Armada Trike)"}
+                </Text>
+              </View>
+
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Kategori</Text>
                 <Text style={styles.summaryValue}>{selectedCategory?.name}</Text>

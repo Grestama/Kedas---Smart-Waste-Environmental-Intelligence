@@ -161,8 +161,23 @@ VALID_TRANSITIONS: dict[str, set[str]] = {
 def create_pickup_request(
     db: Session, user: User, req: PickupCreateRequest, request_id: str | None = None
 ) -> PickupRequest:
-    """Create a new waste pickup request with capacity & special-waste safety validation."""
-    # 1. Verify address ownership
+    """Create a new waste pickup or drop-off request with idempotency, capacity & safety checks."""
+    # 0. Idempotency Check (prevent double-booking and duplicate requests on network retries)
+    if req.idempotency_key:
+        existing = db.scalar(
+            select(PickupRequest).where(
+                PickupRequest.reporter_user_id == user.id,
+                PickupRequest.idempotency_key == req.idempotency_key,
+            )
+        )
+        if existing:
+            return existing
+
+    # 1. Service mode validation
+    if req.service_mode not in ("PICKUP", "DROP_OFF"):
+        raise ValidationError("Mode layanan tidak valid. Pilihan: 'PICKUP' atau 'DROP_OFF'.")
+
+    # 2. Verify address ownership
     address = db.get(UserAddress, req.address_id)
     if not address or address.user_id != user.id:
         raise NotFoundError("Alamat tidak ditemukan atau bukan milik Anda.")
@@ -172,25 +187,39 @@ def create_pickup_request(
 
     service_area_id = address.service_area_id
 
-    # 2. Verify waste category is active
+    # 3. Active service area enforcement
+    service_area = db.get(ServiceArea, service_area_id)
+    if not service_area or not service_area.is_active:
+        raise ValidationError("Area layanan operasional sedang tidak aktif atau dinonaktifkan.")
+
+    # 4. Verify waste category is active
     category = db.get(WasteCategory, req.category_id)
     if not category or not category.is_active:
         raise ValidationError("Kategori sampah tidak aktif atau tidak tersedia.")
 
-    # 3. SPECIAL waste safety gate
-    if category.category_type == CategoryType.SPECIAL.value:
-        rule_stmt = select(MaterialAcceptanceRule).where(
-            MaterialAcceptanceRule.category_id == category.id,
-            MaterialAcceptanceRule.service_area_id == service_area_id,
+    # 5. Check material acceptance rule for the area
+    rule_stmt = select(MaterialAcceptanceRule).where(
+        MaterialAcceptanceRule.category_id == category.id,
+        MaterialAcceptanceRule.service_area_id == service_area_id,
+    )
+    acceptance_rule = db.scalar(rule_stmt)
+    if acceptance_rule and not acceptance_rule.is_accepted:
+        raise ValidationError(
+            f"Kategori sampah [{category.name}] saat ini tidak diterima di area layanan ini."
         )
-        rule = db.scalar(rule_stmt)
-        if not rule or not rule.is_accepted or not rule.special_route_confirmed:
-            raise ValidationError(
-                "Limbah khusus belum memiliki jalur pengolahan dan mitra berizin aktif di wilayah ini. "
-                "Penjemputan umum tidak dapat dijadwalkan demi keselamatan."
-            )
 
-    # 4. Atomic slot lock and capacity check
+    # 6. SPECIAL waste safety gate
+    if category.category_type == CategoryType.SPECIAL.value and (
+        not acceptance_rule
+        or not acceptance_rule.is_accepted
+        or not acceptance_rule.special_route_confirmed
+    ):
+        raise ValidationError(
+            "Limbah khusus belum memiliki jalur pengolahan dan mitra berizin aktif di wilayah ini. "
+            "Penjemputan umum tidak dapat dijadwalkan demi keselamatan."
+        )
+
+    # 7. Atomic slot lock and capacity check
     slot_stmt = (
         select(CollectionSlot)
         .where(
@@ -212,7 +241,7 @@ def create_pickup_request(
     # Increment slot booked capacity
     slot.booked_capacity += 1
 
-    # 5. Create PickupRequest
+    # 8. Create PickupRequest
     public_code = _generate_public_code()
     pickup = PickupRequest(
         public_code=public_code,
@@ -222,6 +251,8 @@ def create_pickup_request(
         address_id=address.id,
         slot_id=slot.id,
         status=PickupStatus.PENDING_ASSIGNMENT.value,
+        service_mode=req.service_mode,
+        idempotency_key=req.idempotency_key,
         estimated_weight_kg=float(req.estimated_weight_kg)
         if req.estimated_weight_kg is not None
         else None,
@@ -230,13 +261,18 @@ def create_pickup_request(
     db.add(pickup)
     db.flush()
 
-    # 6. Record Initial Status Event
+    # 9. Record Initial Status Event
+    reason_text = (
+        "Permintaan penjemputan berhasil dibuat dan siap diambil petugas."
+        if req.service_mode == "PICKUP"
+        else "Setoran mandiri berhasil didaftarkan. Harap serahkan sampah ke titik TPS3R sesuai jadwal."
+    )
     event = PickupStatusEvent(
         pickup_request_id=pickup.id,
         from_status=PickupStatus.SUBMITTED.value,
         to_status=PickupStatus.PENDING_ASSIGNMENT.value,
         actor_user_id=user.id,
-        reason="Permintaan penjemputan berhasil dibuat dan siap diambil petugas.",
+        reason=reason_text,
         request_id=request_id,
     )
     db.add(event)
@@ -366,9 +402,10 @@ def cancel_pickup(
 def list_available_tasks(
     db: Session, collector: User, service_area_id: str | None = None
 ) -> list[PickupRequest]:
-    """List pending tasks available for claim by verified collectors."""
+    """List pending curbside pickup tasks available for claim by verified collectors."""
     stmt = select(PickupRequest).where(
         PickupRequest.status == PickupStatus.PENDING_ASSIGNMENT.value,
+        PickupRequest.service_mode == "PICKUP",
         PickupRequest.assigned_collector_id.is_(None),
     )
     if service_area_id:

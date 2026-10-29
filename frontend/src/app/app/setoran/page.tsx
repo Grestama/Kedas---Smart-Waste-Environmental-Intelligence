@@ -54,9 +54,14 @@ export default function UserDepositsPage() {
       header: "Kategori Material",
       render: (item) => (
         <div>
-          <span className="font-semibold block text-text-primary">
-            {item.category?.name || "Material Terpilah"}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-text-primary">
+              {item.category?.name || "Material Terpilah"}
+            </span>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-brand-100 text-brand-900 border border-brand-200">
+              {item.service_mode === "DROP_OFF" ? "Setor Mandiri" : "Jemput Trike"}
+            </span>
+          </div>
           <span className="text-[11px] text-text-secondary font-mono">
             Dibuat: {formatWITA(item.created_at, { dateStyle: "short", timeStyle: "short" })}
           </span>

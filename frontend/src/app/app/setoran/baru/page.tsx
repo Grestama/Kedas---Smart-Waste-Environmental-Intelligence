@@ -36,6 +36,7 @@ export default function NewDepositPage() {
 
   const [categories, setCategories] = useState<WasteCategory[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [serviceMode, setServiceMode] = useState<"PICKUP" | "DROP_OFF">("PICKUP");
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [slots, setSlots] = useState<CollectionSlot[]>([]);
@@ -123,17 +124,25 @@ export default function NewDepositPage() {
 
     setIsSubmitting(true);
     try {
+      const idempotencyKey = `wlb_web_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 9)}`;
       const created = await collectionService.createPickupRequest({
         category_id: selectedCategoryId,
         address_id: selectedAddressId,
         slot_id: selectedSlotId,
+        service_mode: serviceMode,
+        idempotency_key: idempotencyKey,
         estimated_weight_kg: weightNum,
         notes: notes.trim() || undefined,
       });
 
+      const modeText =
+        serviceMode === "DROP_OFF"
+          ? "Setoran Mandiri TPS3R"
+          : "Penjemputan Armada Trike";
+
       toast.success(
         "Permintaan Setoran Berhasil Dibuat",
-        `Kode Setoran: ${created.public_code}. Petugas TPS3R telah dijadwalkan.`
+        `Kode: ${created.public_code} (${modeText}). Status dapat dipantau secara real-time.`
       );
       router.push(`/app/setoran/${created.id}`);
     } catch (err: unknown) {
@@ -190,9 +199,70 @@ export default function NewDepositPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Step 1: Kategori */}
+        {/* Step 1: Mode Layanan */}
         <Panel
-          title="1. Pilih Kategori Sampah Terpilah"
+          title="1. Jalur Penyerahan Sampah"
+          subtitle="Pilih apakah sampah dijemput armada motor roda tiga banjar atau Anda serahkan langsung ke TPS3R."
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div
+              onClick={() => setServiceMode("PICKUP")}
+              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                serviceMode === "PICKUP"
+                  ? "border-brand-900 bg-brand-100/40 shadow-sm"
+                  : "border-border bg-surface hover:border-brand-700/50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-brand-100 text-brand-900">
+                  ARMADA TRIKE
+                </span>
+                <span className="text-xs font-semibold text-brand-900">Dijemput</span>
+              </div>
+              <h4 className="text-sm font-bold text-brand-900 mt-2">
+                Penjemputan ke Rumah (Pickup)
+              </h4>
+              <p className="text-xs text-text-secondary mt-1">
+                Petugas kebersihan banjar menjemput sampah terpilah langsung di depan pekarangan atau toko Anda.
+              </p>
+            </div>
+
+            <div
+              onClick={() => setServiceMode("DROP_OFF")}
+              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                serviceMode === "DROP_OFF"
+                  ? "border-brand-900 bg-brand-100/40 shadow-sm"
+                  : "border-border bg-surface hover:border-brand-700/50"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                  POS TPS3R
+                </span>
+                <span className="text-xs font-semibold text-[#276749]">Mandiri</span>
+              </div>
+              <h4 className="text-sm font-bold text-brand-900 mt-2">
+                Setoran Mandiri ke TPS3R (Drop-Off)
+              </h4>
+              <p className="text-xs text-text-secondary mt-1">
+                Bawa sampah langsung ke fasilitas Pos Penerimaan TPS3R Sukawati (Senin–Sabtu 08:00–15:00 WITA).
+              </p>
+            </div>
+          </div>
+
+          {serviceMode === "DROP_OFF" && (
+            <div className="mt-3 p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-start gap-2">
+              <Info className="w-4 h-4 shrink-0 mt-0.5 text-emerald-700" />
+              <span>
+                <strong>Petunjuk Setor Mandiri:</strong> Bawa sampah terpilah ke Pos TPS3R Sukawati sesuai jadwal. Tunjukkan kode setoran ke petugas timbang fasilitas untuk verifikasi bobot instan dan pencatatan WastePoints langsung.
+              </span>
+            </div>
+          )}
+        </Panel>
+
+        {/* Step 2: Kategori */}
+        <Panel
+          title="2. Pilih Kategori Sampah Terpilah"
           subtitle="Pastikan material telah dibersihkan sesuai standar kebersihan banjar."
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -264,10 +334,10 @@ export default function NewDepositPage() {
           )}
         </Panel>
 
-        {/* Step 2: Alamat & Jadwal */}
+        {/* Step 3: Alamat & Jadwal */}
         <Panel
-          title="2. Alamat Penjemputan & Jadwal Slot Banjar"
-          subtitle="Pilih lokasi rumah Anda dan waktu kedatangan armada penjemputan TPS3R."
+          title="3. Alamat Penjemputan / Asal & Jadwal Slot Banjar"
+          subtitle="Pilih lokasi rumah/usaha Anda dan waktu kedatangan atau penyerahan ke TPS3R."
         >
           <div className="space-y-4">
             {/* Address Selection */}

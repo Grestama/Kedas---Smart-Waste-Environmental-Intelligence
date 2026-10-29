@@ -202,10 +202,14 @@ export default function DepositDetailPage() {
                   Metode Penyerahan
                 </span>
                 <span className="text-base font-bold text-brand-900 mt-1 block">
-                  Jemput di Rumah (TPS3R)
+                  {request.service_mode === "DROP_OFF"
+                    ? "Setor Mandiri ke TPS3R"
+                    : "Jemput di Rumah (Armada Trike)"}
                 </span>
                 <span className="text-[11px] text-text-secondary mt-0.5 block">
-                  Armada Roda Tiga Desa
+                  {request.service_mode === "DROP_OFF"
+                    ? "Pos Penerimaan TPS3R Sukawati"
+                    : "Motor Roda Tiga Desa"}
                 </span>
               </div>
 

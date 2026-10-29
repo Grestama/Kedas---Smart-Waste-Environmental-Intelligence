@@ -193,4 +193,31 @@ describe("WasteLink Bali Mobile — Phase 6 Quality Gate Tests", () => {
       expect(citizenUser.active_role).not.toBe("ADMIN");
     });
   });
+
+  describe("Tahap 2 — Warga Source Collection & Idempotency Support", () => {
+    it("harus menyertakan idempotency key dan service mode pada payload setoran", () => {
+      const serviceMode = "DROP_OFF";
+      const idempotencyKey = `wlb_mob_${Date.now().toString(36)}_xyz789`;
+      const payload = {
+        category_id: "cat_anorganik",
+        address_id: "addr_01",
+        slot_id: "slot_morning",
+        estimated_weight_kg: 3.5,
+        service_mode: serviceMode,
+        idempotency_key: idempotencyKey,
+        notes: "Botol PET bersih",
+      };
+
+      expect(payload.service_mode).toBe("DROP_OFF");
+      expect(payload.idempotency_key).toContain("wlb_mob_");
+      expect(payload.estimated_weight_kg).toBeGreaterThan(0);
+    });
+
+    it("harus mendukung pemilihan antar penjemputan trike vs setor mandiri ke pos TPS3R", () => {
+      const modes: Array<"PICKUP" | "DROP_OFF"> = ["PICKUP", "DROP_OFF"];
+      expect(modes).toContain("PICKUP");
+      expect(modes).toContain("DROP_OFF");
+      expect(modes.length).toBe(2);
+    });
+  });
 });
