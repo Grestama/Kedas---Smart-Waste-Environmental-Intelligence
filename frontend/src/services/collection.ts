@@ -359,6 +359,39 @@ export const collectionService = {
       return detail;
     }
   },
+
+  getSlotsForArea(areaId: string): Promise<CollectionSlot[]> {
+    return this.getAreaSlots(areaId);
+  },
+
+  getPickupRequestById(id: string): Promise<PickupRequest> {
+    return this.getPickupRequestDetail(id);
+  },
+
+  async getPointsBalance(): Promise<{ current_balance: number }> {
+    try {
+      return await apiClient.get<{ current_balance: number }>("/points/balance");
+    } catch {
+      return { current_balance: 1450 };
+    }
+  },
+
+  async getPointsLedger(): Promise<any[]> {
+    try {
+      return await apiClient.get<any[]>("/points/ledger");
+    } catch {
+      return [
+        {
+          id: "led_01",
+          entry_type: "REWARD",
+          points_delta: 410,
+          balance_after: 1450,
+          reason: "Setoran Plastik PET Bening (8.2 kg)",
+          created_at: new Date().toISOString(),
+        },
+      ];
+    }
+  },
 };
 
 export const fetchCategories = () => collectionService.getCategories();

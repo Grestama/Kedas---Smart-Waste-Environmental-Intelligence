@@ -481,3 +481,18 @@ function enrichTaskWithMetadata(pickup: PickupRequest): CollectorTask {
     slot_time_display: existing?.slot_time_display || "Hari Ini",
   };
 }
+
+export const staffService = {
+  getAvailableTasks: fetchAvailableTasks,
+  getMyTasks: fetchMyTasks,
+  getTaskDetail,
+  acceptTask,
+  updateTaskStatus,
+  recordInspection,
+  fetchInspectionHistory: listInspections,
+  recordWeight,
+  fetchWeightHistory: listWeights,
+  uploadEvidence,
+  fetchEvidenceList: listEvidence,
+  getCollectorStats,
+};

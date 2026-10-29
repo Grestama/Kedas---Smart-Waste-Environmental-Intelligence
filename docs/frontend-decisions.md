@@ -82,3 +82,38 @@ Sesuai arahan `designweb.md` dan `designapps.md`, antarmuka menggunakan palet te
 ### ADR-FE-005: Vitest & React Testing Library
 * **Konteks**: Pengujian frontend harus memverifikasi perilaku komponen nyata, format token, validasi form, dan isolasi route, bukan snapshot statis.
 * **Keputusan**: Menggunakan **Vitest** + **@testing-library/react** + **jsdom** untuk eksekusi unit dan component test yang cepat dan akurat.
+
+---
+
+## 6. Pemisahan Peran & Perangkat Operasional
+
+### ADR-FE-006: Pemisahan Ketat Peran Web Desktop vs Mobile Warga
+* **Konteks**: Berdasarkan PRD dan SRS, petugas sampah dan admin bekerja di kantor operasional/pos TPU, sedangkan warga berinteraksi di rumah melalui web atau aplikasi smartphone.
+* **Keputusan**:
+  - Aplikasi mobile (`mobile/`) **khusus untuk User/Warga**. Tidak ada menu petugas atau admin di aplikasi mobile.
+  - Petugas sampah lapangan menggunakan Web Desktop POS (`/staff`) pada komputer operasional atau tablet pos.
+  - Admin/Operator mengelola sistem menggunakan Web Desktop Admin Console (`/admin`).
+  - Gating berbasis role (`AuthGuard` dan server permission) mencegah bypass otorisasi di client.
+
+---
+
+## 7. Arsitektur Luring & Draf Lokal Mobile
+
+### ADR-FE-007: Draf Lokal Warga Berlabel Eksplisit (Offline-First Safety)
+* **Konteks**: Warga di banjar dapat mengalami fluktuasi sinyal internet saat memilah dan mengajukan permohonan setoran sampah.
+* **Keputusan**:
+  - Permohonan yang dibuat saat luring (offline) disimpan secara lokal di perangkat dengan status `DRAFT_LOKAL_OFFLINE`.
+  - UI secara transparan memberitahukan warga bahwa permohonan belum sampai ke server dan belum ada armada trike yang ditugaskan.
+  - Tombol sinkronisasi manual "Kirim ke Server Sekarang" tersedia di tab Aktivitas ketika koneksi internet pulih.
+  - Izin perangkat (Kamera, Lokasi GPS, Notifikasi) diminta secara kontekstual dengan penjelasan manfaat dan fallback manual lengkap.
+
+---
+
+## 8. Integritas Data & Audit Trail Poin
+
+### ADR-FE-008: Backend sebagai Otoritas Tunggal Nilai Poin & Timbangan
+* **Konteks**: Potensi manipulasi poin atau berat sampah dapat merusak kepercayaan masyarakat dan ekonomi sirkular desa.
+* **Keputusan**:
+  - Klien web dan mobile **tidak pernah menghitung atau menerbitkan poin secara mandiri**.
+  - Poin pada form pembuatan setoran hanya berupa perkiraan (*estimated*). Poin sah diterbitkan secara eksklusif oleh backend setelah penimbangan bersih (*net weight*) dan inspeksi kebersihan di TPS3R Sukawati.
+  - Seluruh mutasi saldo tercatat pada buku besar imutabel (*append-only ledger*) yang dapat ditelusuri.

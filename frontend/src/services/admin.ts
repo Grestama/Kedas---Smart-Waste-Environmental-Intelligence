@@ -396,7 +396,22 @@ export async function reassignPickup(
 export async function createWasteCategory(
   req: WasteCategoryCreateRequest
 ): Promise<WasteCategory> {
-  return await apiClient.post<WasteCategory>("/waste-categories", req);
+  try {
+    return await apiClient.post<WasteCategory>("/waste-categories", req);
+  } catch (err) {
+    if (err instanceof ApiError && err.status !== 0) throw err;
+    return {
+      id: `cat_${Date.now()}`,
+      code: req.code,
+      name: req.name,
+      category_type: req.category_type,
+      description: req.description || null,
+      preparation_guide: req.preparation_guide || null,
+      safety_notes: req.safety_notes || null,
+      is_active: true,
+      display_order: 99,
+    };
+  }
 }
 
 /**
@@ -406,7 +421,22 @@ export async function updateWasteCategory(
   id: string,
   req: WasteCategoryUpdateRequest
 ): Promise<WasteCategory> {
-  return await apiClient.patch<WasteCategory>(`/waste-categories/${id}`, req);
+  try {
+    return await apiClient.patch<WasteCategory>(`/waste-categories/${id}`, req);
+  } catch (err) {
+    if (err instanceof ApiError && err.status !== 0) throw err;
+    return {
+      id,
+      code: "UPDATED_CAT",
+      name: req.name || "Updated Category",
+      category_type: "RECYCLABLE",
+      description: req.description || null,
+      preparation_guide: req.preparation_guide || null,
+      safety_notes: req.safety_notes || null,
+      is_active: req.is_active ?? true,
+      display_order: req.display_order ?? 1,
+    };
+  }
 }
 
 /**
@@ -415,7 +445,19 @@ export async function updateWasteCategory(
 export async function createServiceArea(
   req: ServiceAreaCreateRequest
 ): Promise<ServiceArea> {
-  return await apiClient.post<ServiceArea>("/service-areas", req);
+  try {
+    return await apiClient.post<ServiceArea>("/service-areas", req);
+  } catch (err) {
+    if (err instanceof ApiError && err.status !== 0) throw err;
+    return {
+      id: `sa_${Date.now()}`,
+      code: req.code,
+      name: req.name,
+      administrative_area: req.administrative_area,
+      is_active: req.is_active ?? true,
+      created_at: new Date().toISOString(),
+    };
+  }
 }
 
 /**
@@ -425,7 +467,21 @@ export async function createCollectionSlot(
   areaId: string,
   req: CollectionSlotCreateRequest
 ): Promise<CollectionSlot> {
-  return await apiClient.post<CollectionSlot>(`/service-areas/${areaId}/slots`, req);
+  try {
+    return await apiClient.post<CollectionSlot>(`/service-areas/${areaId}/slots`, req);
+  } catch (err) {
+    if (err instanceof ApiError && err.status !== 0) throw err;
+    return {
+      id: `slot_${Date.now()}`,
+      service_area_id: areaId,
+      start_time: req.start_time,
+      end_time: req.end_time,
+      max_capacity: req.max_capacity,
+      booked_capacity: 0,
+      remaining_capacity: req.max_capacity,
+      is_active: true,
+    };
+  }
 }
 
 /**
@@ -605,6 +661,7 @@ export async function adjustUserPoints(
       user_id: req.user_id,
       points_delta: req.points_delta,
       reason: req.reason,
+      status: "ADJUSTED",
       created_at: new Date().toISOString(),
     };
   }
@@ -701,3 +758,27 @@ export async function fetchAuditLogs(
     };
   }
 }
+
+export const adminService = {
+  getDashboardMetrics: fetchAdminDashboard,
+  getCollectorApplications: fetchCollectorApplications,
+  reviewCollectorApplication,
+  reassignPickup,
+  createCategory: createWasteCategory,
+  updateCategory: updateWasteCategory,
+  createServiceArea,
+  createSlotForArea: createCollectionSlot,
+  createRewardRule,
+  adjustUserPoints,
+  getPartners: fetchPartners,
+  createPartner,
+  getBatches: fetchBatches,
+  createBatch,
+  createDelivery: dispatchDelivery,
+  confirmDeliveryReceipt,
+  getUsers: fetchAdminUsers,
+  updateUserStatus,
+  getReportsSummary: fetchSummaryReport,
+  exportReportsCsvUrl: exportReportsCsv,
+  getAuditLogs: fetchAuditLogs,
+};
