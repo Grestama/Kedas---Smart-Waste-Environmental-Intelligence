@@ -360,3 +360,13 @@ export const collectionService = {
     }
   },
 };
+
+export const fetchCategories = () => collectionService.getCategories();
+export const fetchServiceAreas = () => collectionService.getServiceAreas();
+export const fetchSlotsForArea = (areaId: string) => collectionService.getAreaSlots(areaId);
+export const fetchUserAddresses = () => collectionService.getMyAddresses();
+export const createPickupRequest = (payload: any) => collectionService.createPickupRequest(payload);
+export const fetchMyPickupRequests = (status?: string) => collectionService.getMyPickupRequests(status);
+export const getPickupRequestDetail = (id: string) => collectionService.getPickupRequestDetail(id);
+export const cancelPickupRequest = (id: string, reason: string) => collectionService.cancelPickupRequest(id, reason);
+

@@ -1,106 +1,161 @@
 "use client";
 
-import React from "react";
-import { History, ShieldCheck, Key } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { History, ShieldCheck, RefreshCw, Key, Filter, Search } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { DataTable, Column } from "@/components/ui/DataTable";
-import { formatWITA } from "@/tokens";
+import { Panel } from "@/components/ui/Panel";
+import { Button } from "@/components/ui/Button";
+import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { fetchAuditLogs } from "@/services/admin";
+import { AuditLogItem } from "@/types/admin";
 
 export default function AdminAuditLogPage() {
-  const auditLogs = [
-    {
-      id: "AUD-1082",
-      timestamp: "2026-10-28T09:15:22+08:00",
-      actor: "made.collector@wastelink.bali.id",
-      action: "SETORAN_WEIGHED",
-      details: "Penimbangan REQ-2026-0009: 8.2 kg Organik diverifikasi, +82 poin diterbitkan.",
-      ipAddress: "192.168.10.42 (POS TPU)",
-    },
-    {
-      id: "AUD-1081",
-      timestamp: "2026-10-28T08:02:10+08:00",
-      actor: "admin.operasional@wastelink.bali.id",
-      action: "TASK_ASSIGNED",
-      details: "Penugasan tugas TSK-083 kepada kolektor I Made Artawan.",
-      ipAddress: "10.0.4.15",
-    },
-    {
-      id: "AUD-1080",
-      timestamp: "2026-10-27T16:00:15+08:00",
-      actor: "wayan.sudarsana@example.com",
-      action: "SETORAN_CREATED",
-      details: "Pembuatan permohonan setoran REQ-2026-0009 (Organik, dropoff).",
-      ipAddress: "182.253.112.9",
-    },
-    {
-      id: "AUD-1079",
-      timestamp: "2026-10-26T14:30:00+08:00",
-      actor: "admin.operasional@wastelink.bali.id",
-      action: "RULE_UPDATED",
-      details: "Pembaruan rasio poin plastik PET menjadi 30 poin/kg.",
-      ipAddress: "10.0.4.15",
-    },
-  ];
+  const [logs, setLogs] = useState<AuditLogItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionFilter, setActionFilter] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const columns: Column<(typeof auditLogs)[0]>[] = [
-    {
-      key: "id",
-      header: "ID Audit",
-      render: (item) => (
-        <span className="font-mono font-bold text-brand-900">{item.id}</span>
-      ),
-    },
-    {
-      key: "timestamp",
-      header: "Waktu (WITA)",
-      render: (item) => (
-        <span className="font-mono text-xs">{formatWITA(item.timestamp)}</span>
-      ),
-    },
-    {
-      key: "action",
-      header: "Aksi Transaksi",
-      render: (item) => (
-        <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded bg-brand-100 text-brand-900">
-          {item.action}
-        </span>
-      ),
-    },
-    {
-      key: "actor",
-      header: "Pelaku (Akun)",
-      render: (item) => (
-        <div>
-          <span className="font-mono text-xs block">{item.actor}</span>
-          <span className="text-[10px] text-text-secondary">{item.ipAddress}</span>
-        </div>
-      ),
-    },
-    {
-      key: "details",
-      header: "Detail Perubahan",
-      render: (item) => (
-        <span className="text-xs text-text-secondary">{item.details}</span>
-      ),
-    },
-  ];
+  const loadLogs = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetchAuditLogs(
+        actionFilter === "ALL" ? undefined : actionFilter
+      );
+      setLogs(res.items);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Gagal memuat log audit sistem."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [actionFilter]);
+
+  const filteredLogs = logs.filter((log) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      log.action.toLowerCase().includes(q) ||
+      (log.entity_type && log.entity_type.toLowerCase().includes(q)) ||
+      (log.reason && log.reason.toLowerCase().includes(q)) ||
+      (log.actor_user_id && log.actor_user_id.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Audit Log Sistem & Integritas Transaksi"
-        description="Buku jejak audit yang tidak dapat dimanipulasi (append-only) untuk seluruh mutasi timbangan dan poin."
+        title="Audit Log Penelusuran Sistem (Read-Only)"
+        description="Rekaman audit append-only yang tidak dapat diubah untuk setiap aksi penimbangan, mutasi poin, dan persetujuan operasional banjar."
         breadcrumbs={[
           { label: "Admin", href: "/admin" },
-          { label: "Audit Log" },
+          { label: "Audit Log", active: true },
         ]}
+        actions={
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadLogs}
+            disabled={isLoading}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />}
+          >
+            Segarkan Log
+          </Button>
+        }
       />
 
-      <DataTable
-        columns={columns}
-        data={auditLogs}
-        keyExtractor={(item) => item.id}
-      />
+      {/* Filter Ribbon */}
+      <Panel className="p-3 bg-surface border border-border">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input
+              type="text"
+              placeholder="Cari aksi, entitas, alasan..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 text-xs bg-canvas border border-border rounded-lg text-text-primary focus:outline-none focus:ring-1 focus:ring-brand-700"
+            />
+          </div>
+
+          <div className="text-xs text-text-muted font-medium">
+            Status: <span className="text-[#2E6B4F] font-bold">Append-Only / Immutable</span>
+          </div>
+        </div>
+      </Panel>
+
+      {/* Logs Table / List */}
+      {isLoading ? (
+        <div className="space-y-3">
+          <LoadingSkeleton className="h-20 rounded-xl" />
+          <LoadingSkeleton className="h-20 rounded-xl" />
+        </div>
+      ) : error ? (
+        <ErrorState title="Gagal Memuat Audit Log" description={error} onRetry={loadLogs} />
+      ) : filteredLogs.length === 0 ? (
+        <EmptyState
+          title="Tidak Ada Catatan Audit"
+          description="Belum ada aktivitas mutasi yang tercatat dengan kriteria pencarian ini."
+        />
+      ) : (
+        <div className="space-y-3">
+          {filteredLogs.map((log) => (
+            <Panel
+              key={log.id}
+              className="p-4 bg-surface border border-border hover:border-brand-500 transition-colors shadow-xs"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-brand-50 text-brand-900 border border-brand-200">
+                      {log.action}
+                    </span>
+                    <span className="text-[11px] font-bold text-text-muted font-mono">
+                      {log.entity_type} &bull; {log.entity_id || "-"}
+                    </span>
+                  </div>
+
+                  {log.reason && (
+                    <p className="text-xs text-text-primary font-medium">
+                      Alasan: &ldquo;{log.reason}&rdquo;
+                    </p>
+                  )}
+
+                  {log.details_json && (
+                    <p className="text-[11px] text-text-muted font-mono bg-canvas px-2.5 py-1 rounded border border-border max-w-2xl truncate">
+                      {log.details_json}
+                    </p>
+                  )}
+                </div>
+
+                <div className="shrink-0 text-right text-xs text-text-muted">
+                  <p className="font-mono text-[11px]">
+                    Actor: {log.actor_user_id || "SYSTEM"}
+                  </p>
+                  <p className="font-mono text-[11px] text-text-secondary mt-0.5">
+                    {new Date(log.created_at).toLocaleTimeString("id-ID", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      timeZone: "Asia/Makassar",
+                    })}{" "}
+                    WITA
+                  </p>
+                </div>
+              </div>
+            </Panel>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
