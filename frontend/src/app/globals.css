@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-canvas: #f6f6f1;
+  --color-surface: #ffffff;
+  --color-brand-900: #1d3f35;
+  --color-brand-700: #2f6552;
+  --color-brand-100: #e8f0e9;
+  --color-border: #dce3dd;
+  --color-text-primary: #1e2a25;
+  --color-text-secondary: #5d6b63;
+  --focus-ring: #83b6a0;
+}
+
+@layer base {
+  * {
+    border-color: #dce3dd;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-text-primary);
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* Field operations high contrast readability */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-brand-900);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Custom scrollbar for data tables and mobile simulator */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f3f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #c3cdc6;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9ba6a0;
+}
