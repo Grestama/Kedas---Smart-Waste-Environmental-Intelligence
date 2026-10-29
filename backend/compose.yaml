@@ -1,0 +1,44 @@
+# WasteLink Bali — Local Development Compose
+# Usage: docker compose up -d
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: wastelink_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wastelink
+      POSTGRES_PASSWORD: wastelink_dev_password_only_for_local
+      POSTGRES_DB: wastelink_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wastelink -d wastelink_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wastelink_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: local
+      DEBUG: "true"
+      DATABASE_URL: postgresql://wastelink:wastelink_dev_password_only_for_local@db:5432/wastelink_dev
+      SESSION_SECRET_KEY: local_development_secret_key_minimum_32_characters_for_testing
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app/app:ro
+      - ./uploads:/app/uploads
+
+volumes:
+  postgres_data:

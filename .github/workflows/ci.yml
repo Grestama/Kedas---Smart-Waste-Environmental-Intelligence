@@ -1,0 +1,72 @@
+name: WasteLink Bali Backend CI
+
+on:
+  push:
+    branches: [ master, main, "phase-*" ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  test:
+    name: Lint, Typecheck & Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: wastelink
+          POSTGRES_PASSWORD: wastelink_test_ci_password
+          POSTGRES_DB: wastelink_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Lint check (Ruff)
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Type check (Mypy)
+        run: |
+          mypy app
+
+      - name: Run Alembic migrations on clean DB
+        env:
+          DATABASE_URL: postgresql://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
+          SESSION_SECRET_KEY: test_secret_key_minimum_32_chars_for_ci_environment
+        run: |
+          alembic upgrade head
+          alembic downgrade -1
+          alembic upgrade head
+
+      - name: Run tests with pytest & coverage
+        env:
+          APP_ENV: test
+          DATABASE_URL: postgresql://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
+          DATABASE_URL_TEST: postgresql://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
+          SESSION_SECRET_KEY: test_secret_key_minimum_32_chars_for_ci_environment
+        run: |
+          pytest --cov=app --cov-report=term-missing
