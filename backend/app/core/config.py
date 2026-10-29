@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -49,7 +50,7 @@ class Settings(BaseSettings):
     session_lifetime_seconds: int = Field(default=86400, ge=300)
     session_cookie_name: str = "wastelink_session"
     session_cookie_secure: bool = False
-    session_cookie_samesite: str = "lax"
+    session_cookie_samesite: Literal["lax", "strict", "none"] = "lax"
 
     csrf_secret_key: str = ""
 

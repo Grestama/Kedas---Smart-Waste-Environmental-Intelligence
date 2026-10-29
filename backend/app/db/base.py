@@ -1,6 +1,6 @@
 """WasteLink Bali — Central database metadata registry.
 
-Import all ORM models here so Alembic can detect them for autogenerate.
+Import all ORM models here so Alembic can detect them for migrations.
 """
 
 from __future__ import annotations
@@ -12,6 +12,35 @@ from sqlalchemy import DateTime, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.session import Base
+
+# --- Account & Identity Models ---
+from app.modules.account.models import (
+    AccountStatus,
+    ApplicationStatus,
+    AuthSession,
+    CollectorApplication,
+    Role,
+    User,
+    UserAddress,
+    UserRole,
+    VerificationStatus,
+)
+
+# --- Collection & Scheduling Models ---
+from app.modules.collection.models import (
+    CollectionSlot,
+    PickupRequest,
+    PickupStatus,
+    PickupStatusEvent,
+    ServiceArea,
+)
+
+# --- Taxonomy Models ---
+from app.modules.taxonomy.models import (
+    CategoryType,
+    MaterialAcceptanceRule,
+    WasteCategory,
+)
 
 
 class AuditLog(Base):
@@ -77,5 +106,25 @@ class AuditLog(Base):
     )
 
 
-# Export Base and models for Alembic
-__all__ = ["Base", "AuditLog"]
+# Export Base and all models
+__all__ = [
+    "Base",
+    "AuditLog",
+    "User",
+    "AuthSession",
+    "Role",
+    "UserRole",
+    "CollectorApplication",
+    "UserAddress",
+    "AccountStatus",
+    "VerificationStatus",
+    "ApplicationStatus",
+    "WasteCategory",
+    "CategoryType",
+    "MaterialAcceptanceRule",
+    "ServiceArea",
+    "CollectionSlot",
+    "PickupRequest",
+    "PickupStatus",
+    "PickupStatusEvent",
+]
