@@ -123,4 +123,4 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """Cached settings instance — call once at startup."""
-    return Settings()  # type: ignore[call-arg]
+    return Settings()
