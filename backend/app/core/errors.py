@@ -13,11 +13,24 @@ Internal details (stack traces, SQL errors, file paths) are NEVER exposed.
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+
+class ErrorCode(StrEnum):
+    VALIDATION_ERROR = "VALIDATION_ERROR"
+    AUTHENTICATION_REQUIRED = "AUTHENTICATION_REQUIRED"
+    FORBIDDEN = "FORBIDDEN"
+    NOT_FOUND = "NOT_FOUND"
+    CONFLICT = "CONFLICT"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+    INVALID_STATE_TRANSITION = "INVALID_STATE_TRANSITION"
+
 
 # --- Error response schema ---
 

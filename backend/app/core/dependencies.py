@@ -99,8 +99,14 @@ class RequireRole:
     The client-supplied active_role preference is NEVER trusted for authorization.
     """
 
-    def __init__(self, allowed_roles: Sequence[str]) -> None:
-        self.allowed_roles = set(allowed_roles)
+    def __init__(self, *allowed_roles: str | Sequence[str]) -> None:
+        roles: set[str] = set()
+        for r in allowed_roles:
+            if isinstance(r, str):
+                roles.add(r)
+            else:
+                roles.update(r)
+        self.allowed_roles = roles
 
     async def __call__(
         self,

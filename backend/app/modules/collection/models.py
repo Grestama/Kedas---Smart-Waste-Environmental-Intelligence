@@ -120,9 +120,24 @@ class PickupRequest(Base, TimestampMixin):
     estimated_weight_kg: Mapped[float | None] = mapped_column(
         Numeric(precision=8, scale=2), nullable=True
     )
+    actual_weight_kg: Mapped[float | None] = mapped_column(
+        Numeric(precision=10, scale=3), nullable=True
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     cancellation_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    @property
+    def tracking_code(self) -> str:
+        return self.public_code
+
+    @property
+    def user_id(self) -> str:
+        return self.reporter_user_id
+
+    @property
+    def collector_id(self) -> str | None:
+        return self.assigned_collector_id
 
     # Relationships
     service_area: Mapped[ServiceArea] = relationship("ServiceArea", back_populates="pickups")

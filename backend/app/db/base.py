@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import DateTime, Index, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -35,11 +36,61 @@ from app.modules.collection.models import (
     ServiceArea,
 )
 
+# --- Evidence Models ---
+from app.modules.evidence.models import (
+    EvidenceEntityType,
+    EvidenceFile,
+    EvidenceFileStatus,
+)
+
+# --- Funding Models ---
+from app.modules.funding.models import (
+    FundingProgram,
+    FundingProgramStatus,
+)
+
+# --- Inspection Models ---
+from app.modules.inspection.models import (
+    ContaminationLevel,
+    InspectionRecord,
+    InspectionResult,
+)
+
+# --- Marketplace Models ---
+from app.modules.marketplace.models import (
+    BatchStatus,
+    DeliveryRecord,
+    DeliveryStatus,
+    MaterialBatch,
+    MaterialBatchItem,
+    Partner,
+    PartnerVerificationStatus,
+)
+
+# --- Notification Models ---
+from app.modules.notification.models import Notification
+
+# --- WastePoints Models ---
+from app.modules.points.models import (
+    LedgerEntry,
+    LedgerEntryStatus,
+    LedgerEntryType,
+    RewardRule,
+    RewardRuleStatus,
+)
+
 # --- Taxonomy Models ---
 from app.modules.taxonomy.models import (
     CategoryType,
     MaterialAcceptanceRule,
     WasteCategory,
+)
+
+# --- Weight Models ---
+from app.modules.weight.models import (
+    WeighingMethod,
+    WeightRecord,
+    WeightVerificationStatus,
 )
 
 
@@ -105,6 +156,37 @@ class AuditLog(Base):
         Index("ix_audit_logs_entity", "entity_type", "entity_id"),
     )
 
+    def __init__(
+        self,
+        *,
+        action: str,
+        entity_type: str,
+        actor_user_id: str | None = None,
+        actor_id: str | None = None,
+        entity_id: str | None = None,
+        reason: str | None = None,
+        request_id: str | None = None,
+        ip_address: str | None = None,
+        details_json: str | None = None,
+        payload_after: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        import json
+
+        if payload_after and not details_json:
+            details_json = json.dumps(payload_after)
+        super().__init__(
+            action=action,
+            entity_type=entity_type,
+            actor_user_id=actor_user_id or actor_id,
+            entity_id=entity_id,
+            reason=reason,
+            request_id=request_id,
+            ip_address=ip_address,
+            details_json=details_json,
+            **kwargs,
+        )
+
 
 # Export Base and all models
 __all__ = [
@@ -127,4 +209,28 @@ __all__ = [
     "PickupRequest",
     "PickupStatus",
     "PickupStatusEvent",
+    "InspectionRecord",
+    "InspectionResult",
+    "ContaminationLevel",
+    "WeightRecord",
+    "WeighingMethod",
+    "WeightVerificationStatus",
+    "EvidenceFile",
+    "EvidenceEntityType",
+    "EvidenceFileStatus",
+    "RewardRule",
+    "RewardRuleStatus",
+    "LedgerEntry",
+    "LedgerEntryType",
+    "LedgerEntryStatus",
+    "FundingProgram",
+    "FundingProgramStatus",
+    "Partner",
+    "PartnerVerificationStatus",
+    "MaterialBatch",
+    "BatchStatus",
+    "MaterialBatchItem",
+    "DeliveryRecord",
+    "DeliveryStatus",
+    "Notification",
 ]

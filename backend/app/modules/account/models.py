@@ -56,6 +56,7 @@ class User(Base, TimestampMixin):
         foreign_keys="UserRole.user_id",
         back_populates="user",
         cascade="all, delete-orphan",
+        lazy="selectin",
     )
     addresses: Mapped[list[UserAddress]] = relationship(
         "UserAddress", back_populates="user", cascade="all, delete-orphan"
@@ -66,6 +67,10 @@ class User(Base, TimestampMixin):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+
+    @property
+    def user_roles(self) -> list[UserRole]:
+        return self.roles
 
 
 class AuthSession(Base):
@@ -133,7 +138,7 @@ class UserRole(Base):
     notes: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     user: Mapped[User] = relationship("User", foreign_keys=[user_id], back_populates="roles")
-    role: Mapped[Role] = relationship("Role", back_populates="user_grants")
+    role: Mapped[Role] = relationship("Role", back_populates="user_grants", lazy="joined")
 
     __table_args__ = (UniqueConstraint("user_id", "role_id", name="uq_user_roles_user_role"),)
 

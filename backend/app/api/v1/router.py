@@ -11,11 +11,17 @@ from app.api.v1.admin_pickups import router as admin_pickups_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.collector_applications import router as collector_applications_router
 from app.api.v1.collector_tasks import router as collector_tasks_router
+from app.api.v1.evidence import router as evidence_router
 from app.api.v1.health import router as health_router
+from app.api.v1.inspections import router as inspections_router
+from app.api.v1.marketplace import router as marketplace_router
 from app.api.v1.me import router as me_router
+from app.api.v1.notifications import router as notifications_router
 from app.api.v1.pickup_requests import router as pickup_requests_router
+from app.api.v1.points import router as points_router
 from app.api.v1.service_areas import router as service_areas_router
 from app.api.v1.waste_categories import router as waste_categories_router
+from app.api.v1.weights import router as weights_router
 
 api_v1_router = APIRouter()
 
@@ -41,3 +47,19 @@ api_v1_router.include_router(
     collector_tasks_router, prefix="/collector/tasks", tags=["Collector Operations"]
 )
 api_v1_router.include_router(admin_pickups_router, prefix="/admin/pickups", tags=["Admin Pickups"])
+
+# --- Phase 3: Inspection QC & Verified Weighing ---
+api_v1_router.include_router(inspections_router, tags=["Inspections QC"])
+api_v1_router.include_router(weights_router, tags=["Verified Weights"])
+
+# --- Phase 3: Evidence Media Storage ---
+api_v1_router.include_router(evidence_router, tags=["Evidence Media"])
+
+# --- Phase 3: WastePoints Ledger & Funding ---
+api_v1_router.include_router(points_router, tags=["WastePoints"])
+
+# --- Phase 3: Circular Marketplace & Batches ---
+api_v1_router.include_router(marketplace_router, tags=["Marketplace & Deliveries"])
+
+# --- Phase 3: Notifications ---
+api_v1_router.include_router(notifications_router, tags=["Notifications"])
