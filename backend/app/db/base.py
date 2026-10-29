@@ -68,7 +68,7 @@ from app.modules.marketplace.models import (
 )
 
 # --- Notification Models ---
-from app.modules.notification.models import Notification
+from app.modules.notification.models import Notification, NotificationOutbox, OutboxStatus
 
 # --- WastePoints Models ---
 from app.modules.points.models import (
@@ -233,4 +233,6 @@ __all__ = [
     "DeliveryRecord",
     "DeliveryStatus",
     "Notification",
+    "NotificationOutbox",
+    "OutboxStatus",
 ]

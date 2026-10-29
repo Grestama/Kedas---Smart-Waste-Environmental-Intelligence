@@ -6,6 +6,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.modules.account.models import AccountStatus
+
 # --- Auth & User Schemas ---
 
 
@@ -112,3 +114,10 @@ class CollectorApplicationResponse(BaseModel):
     reviewed_at: datetime | None = None
     rejection_reason: str | None = None
     created_at: datetime
+
+
+class UserStatusUpdateRequest(BaseModel):
+    status: AccountStatus
+    reason: str = Field(
+        min_length=5, max_length=255, description="Alasan administratif perubahan status akun"
+    )

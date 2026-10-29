@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -414,3 +414,63 @@ def review_collector_application(
     db.commit()
     db.refresh(app)
     return app
+
+
+def list_admin_users(
+    db: Session,
+    role_code: str | None = None,
+    status: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[User], int]:
+    """Retrieve users list with role/status filters and bounded pagination."""
+    stmt = select(User).order_by(User.created_at.desc())
+    if status:
+        stmt = stmt.where(User.account_status == status)
+    if role_code:
+        stmt = (
+            stmt.join(UserRole, UserRole.user_id == User.id)
+            .join(Role, Role.id == UserRole.role_id)
+            .where(Role.code == role_code)
+        )
+
+    total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
+    items = list(db.scalars(stmt.offset((page - 1) * page_size).limit(page_size)).all())
+    return items, total
+
+
+def update_user_status(
+    db: Session,
+    admin_id: str,
+    user_id: str,
+    status: str,
+    reason: str,
+    request_id: str | None = None,
+) -> User:
+    """Update a user's account status (e.g. SUSPENDED) and revoke active sessions if suspended."""
+    user = db.get(User, user_id)
+    if not user:
+        raise NotFoundError("Pengguna tidak ditemukan.")
+
+    old_status = user.account_status
+    user.account_status = status
+
+    # If suspended, immediately revoke all active sessions
+    if status == AccountStatus.SUSPENDED.value:
+        db.query(AuthSession).where(
+            AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None)
+        ).update({"revoked_at": datetime.now(UTC)})
+
+    audit = AuditLog(
+        actor_user_id=admin_id,
+        action="USER_STATUS_UPDATED",
+        entity_type="USER",
+        entity_id=user.id,
+        reason=reason,
+        request_id=request_id,
+        payload_after={"from_status": old_status, "to_status": status, "reason": reason},
+    )
+    db.add(audit)
+    db.commit()
+    db.refresh(user)
+    return user
