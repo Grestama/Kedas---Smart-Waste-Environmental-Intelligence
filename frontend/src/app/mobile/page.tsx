@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   MobilePhoneFrame,
   MobileTab,
@@ -19,34 +19,85 @@ import {
   HelpCircle,
   ChevronRight,
   Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { StatusBadge, getStatusBadgeConfig } from "@/components/ui/StatusBadge";
-import { mockUsers, mockRequests, mockCategories } from "@/mocks/previewData";
+import { collectionService } from "@/services/collection";
+import { WasteCategory, PickupRequest } from "@/types/collection";
+import { useAuth } from "@/context/auth-context";
 import { formatWITA, formatWeightKg, formatPoints } from "@/tokens";
 import { useToast } from "@/components/ui/Toast";
 
 export default function MobileSimulatorPage() {
   const toast = useToast();
+  const { user } = useAuth();
   const [tab, setTab] = useState<MobileTab>("beranda");
-  const user = mockUsers.warga;
-  const latestRequest = mockRequests[0];
 
-  // Mobile deposit form states
-  const [mobileCategory, setMobileCategory] = useState("cat_anorganik_pet");
+  const [categories, setCategories] = useState<WasteCategory[]>([]);
+  const [requests, setRequests] = useState<PickupRequest[]>([]);
+  const [mobileCategory, setMobileCategory] = useState("");
   const [mobileWeight, setMobileWeight] = useState("3.5");
   const [mobileSubmitted, setMobileSubmitted] = useState(false);
 
-  const handleMobileDepositSubmit = (e: React.FormEvent) => {
+  const displayName = user?.full_name || "I Wayan Sudarsana";
+  const displayBanjar = "Banjar Kaja, Desa Sukawati";
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [cats, reqs] = await Promise.all([
+          collectionService.getCategories(),
+          collectionService.getMyPickupRequests(),
+        ]);
+        setCategories(cats);
+        if (cats.length > 0) {
+          const nonSpecial = cats.find((c) => c.category_type !== "SPECIAL") || cats[0];
+          setMobileCategory(nonSpecial.id);
+        }
+        setRequests(reqs);
+      } catch (err) {
+        console.error("Gagal memuat data simulator:", err);
+      }
+    }
+    loadData();
+  }, []);
+
+  const selectedCategory = categories.find((c) => c.id === mobileCategory);
+  const isSpecialCategory = selectedCategory?.category_type === "SPECIAL";
+  const latestRequest = requests[0];
+
+  const handleMobileDepositSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSpecialCategory) {
+      toast.error(
+        "Kategori Ditolak (Safety Gating)",
+        "Limbah B3/Khusus dilarang dijemput via motor roda tiga reguler."
+      );
+      return;
+    }
+
     setMobileSubmitted(true);
-    toast.success(
-      "Setoran Berhasil Dibuat (Mobile)",
-      "Permintaan penjemputan Anda telah dijadwalkan."
-    );
-    setTimeout(() => {
+    try {
+      const created = await collectionService.createPickupRequest({
+        category_id: mobileCategory,
+        address_id: "addr_default_01",
+        slot_id: "slot_01",
+        estimated_weight_kg: parseFloat(mobileWeight) || 3.0,
+      });
+
+      setRequests((prev) => [created, ...prev]);
+      toast.success(
+        "Setoran Dijadwalkan",
+        `Kode: ${created.public_code || created.id}. Petugas TPS3R telah dijadwalkan.`
+      );
+      setTimeout(() => {
+        setMobileSubmitted(false);
+        setTab("aktivitas");
+      }, 500);
+    } catch {
       setMobileSubmitted(false);
-      setTab("aktivitas");
-    }, 800);
+    }
   };
 
   return (
@@ -59,14 +110,14 @@ export default function MobileSimulatorPage() {
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] text-text-secondary uppercase tracking-wider font-semibold block">
-                  {user.banjar}
+                  {displayBanjar}
                 </span>
                 <h2 className="text-base font-bold text-brand-900">
-                  Om Swastiastu, Wayan
+                  Om Swastiastu, {displayName.split(" ")[0]}
                 </h2>
               </div>
               <div className="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center text-xs font-bold shadow-sm">
-                WS
+                {displayName.slice(0, 2).toUpperCase()}
               </div>
             </div>
 
@@ -81,10 +132,10 @@ export default function MobileSimulatorPage() {
                 </span>
               </div>
               <div className="text-2xl font-black tracking-tight">
-                {formatPoints(user.pointsBalance)}
+                1.250 poin
               </div>
               <div className="pt-2 border-t border-white/15 flex items-center justify-between text-[11px] text-brand-100/90">
-                <span>Total Disetor: {formatWeightKg(user.totalKgDeposited)}</span>
+                <span>Total Disetor: 48,5 kg</span>
                 <button
                   type="button"
                   onClick={() => setTab("poin")}
@@ -107,10 +158,13 @@ export default function MobileSimulatorPage() {
 
             {/* Active Deposit Card */}
             {latestRequest && (
-              <div className="p-3.5 rounded-xl bg-surface border border-border shadow-xs space-y-2">
+              <div
+                onClick={() => setTab("aktivitas")}
+                className="p-3.5 rounded-xl bg-surface border border-border shadow-2xs space-y-2 cursor-pointer hover:border-brand-700/60 transition-colors"
+              >
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-brand-900">
-                    Setoran Aktif ({latestRequest.id})
+                    Setoran Aktif ({latestRequest.public_code || latestRequest.id})
                   </span>
                   <StatusBadge
                     variant={getStatusBadgeConfig(latestRequest.status).variant}
@@ -119,11 +173,11 @@ export default function MobileSimulatorPage() {
                   />
                 </div>
                 <p className="text-[11px] text-text-secondary">
-                  {latestRequest.category_name} &bull; Est. {formatWeightKg(latestRequest.estimated_weight)}
+                  {latestRequest.category?.name || "Plastik PET Bening"} &bull; Est. {formatWeightKg(latestRequest.estimated_weight_kg || 0)}
                 </p>
                 <div className="text-[10px] text-brand-700 font-mono flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  <span>{formatWITA(latestRequest.scheduled_at)}</span>
+                  <span>{formatWITA(latestRequest.created_at, { timeStyle: "short", dateStyle: "medium" })}</span>
                 </div>
               </div>
             )}
@@ -134,23 +188,33 @@ export default function MobileSimulatorPage() {
                 Kategori Terpilah Banjar
               </span>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                {mockCategories.map((c) => (
+                {categories.map((c) => (
                   <div
                     key={c.id}
                     onClick={() => {
                       setMobileCategory(c.id);
                       setTab("setor");
                     }}
-                    className="p-2.5 rounded-xl bg-surface border border-border cursor-pointer hover:border-brand-900 active:bg-brand-100/30 transition-all"
+                    className={`p-2.5 rounded-xl bg-surface border cursor-pointer active:bg-brand-100/30 transition-all ${
+                      c.category_type === "SPECIAL"
+                        ? "border-[#F5C6BF] hover:border-[#A43F35]"
+                        : "border-border hover:border-brand-900"
+                    }`}
                   >
-                    <span className="text-[9px] font-mono font-bold text-brand-900 bg-brand-100 px-1.5 py-0.5 rounded">
-                      +{c.pointRate} pt/kg
+                    <span
+                      className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded ${
+                        c.category_type === "SPECIAL"
+                          ? "bg-[#FBEAE7] text-[#A43F35]"
+                          : "bg-brand-100 text-brand-900"
+                      }`}
+                    >
+                      {c.category_type === "SPECIAL" ? "Khusus" : `+${c.pointRate || 20} pt/kg`}
                     </span>
                     <p className="font-bold text-brand-900 text-[11px] mt-1.5 truncate">
                       {c.name}
                     </p>
                     <p className="text-[10px] text-text-secondary line-clamp-1">
-                      {c.contaminationThreshold}
+                      {c.description}
                     </p>
                   </div>
                 ))}
@@ -171,6 +235,15 @@ export default function MobileSimulatorPage() {
               </p>
             </div>
 
+            {isSpecialCategory && (
+              <div className="p-3 rounded-xl bg-[#FBEAE7] border border-[#F5C6BF] text-[#A43F35] text-[11px] flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Safety Gating:</strong> Limbah B3/Khusus dilarang disetor mandiri demi keselamatan petugas TPS3R.
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleMobileDepositSubmit} className="space-y-3.5 text-xs">
               <div>
                 <label className="block text-[11px] font-semibold uppercase text-text-secondary mb-1">
@@ -181,9 +254,9 @@ export default function MobileSimulatorPage() {
                   onChange={(e) => setMobileCategory(e.target.value)}
                   className="w-full h-10 px-3 rounded-lg bg-surface border border-border text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-700"
                 >
-                  {mockCategories.map((c) => (
+                  {categories.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} (+{c.pointRate} poin/kg)
+                      {c.name} {c.category_type === "SPECIAL" ? "(Khusus/B3)" : `(+${c.pointRate || 20} poin/kg)`}
                     </option>
                   ))}
                 </select>
@@ -204,23 +277,23 @@ export default function MobileSimulatorPage() {
                   required
                 />
                 <span className="text-[10px] text-text-secondary mt-1 block">
-                  Bobot final akan ditimbang resmi oleh petugas dengan timbangan digital.
+                  Bobot final akan diverifikasi oleh timbangan digital petugas.
                 </span>
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold uppercase text-text-secondary mb-1">
-                  Pilihan Jadwal Jemput
+                  Pilihan Jadwal Jemput (Slot Kuota)
                 </label>
                 <select className="w-full h-10 px-3 rounded-lg bg-surface border border-border text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-700">
-                  <option>Sabtu, 31 Okt (08:30 - 10:00 WITA)</option>
-                  <option>Senin, 02 Nov (08:30 - 10:00 WITA)</option>
+                  <option>Sabtu, 31 Okt (08:30 - 10:30 WITA) • Sisa 7 Kuota</option>
+                  <option>Senin, 02 Nov (08:30 - 10:30 WITA) • Sisa 10 Kuota</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-[11px] font-semibold uppercase text-text-secondary mb-1">
-                  Alamat Rumah
+                  Alamat Penjemputan
                 </label>
                 <input
                   type="text"
@@ -232,10 +305,18 @@ export default function MobileSimulatorPage() {
 
               <button
                 type="submit"
-                disabled={mobileSubmitted}
-                className="w-full py-3 rounded-xl bg-brand-900 text-white font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                disabled={isSpecialCategory || mobileSubmitted}
+                className={`w-full py-3 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform ${
+                  isSpecialCategory
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-brand-900 text-white"
+                }`}
               >
-                {mobileSubmitted ? "Mengirim..." : "Konfirmasi & Kirim Setoran"}
+                {isSpecialCategory
+                  ? "Kategori Khusus Ditolak"
+                  : mobileSubmitted
+                  ? "Mengirim Permintaan..."
+                  : "Konfirmasi & Kirim Permintaan"}
               </button>
             </form>
           </div>
@@ -245,11 +326,11 @@ export default function MobileSimulatorPage() {
         {tab === "aktivitas" && (
           <div className="p-4 space-y-3">
             <h3 className="text-base font-bold text-brand-900">
-              Riwayat & Aktivitas Setor
+              Riwayat & Aktivitas Setoran
             </h3>
 
             <div className="space-y-2 text-xs">
-              {mockRequests.map((req) => {
+              {requests.map((req) => {
                 const b = getStatusBadgeConfig(req.status);
                 return (
                   <div
@@ -258,23 +339,25 @@ export default function MobileSimulatorPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono font-bold text-brand-900 text-[11px]">
-                        {req.id}
+                        {req.public_code || req.id}
                       </span>
                       <StatusBadge variant={b.variant} label={b.label} size="sm" />
                     </div>
                     <p className="font-semibold text-text-primary text-xs">
-                      {req.category_name}
+                      {req.category?.name || "Material Terpilah"}
                     </p>
                     <div className="flex items-center justify-between text-[11px] text-text-secondary pt-1 border-t border-border">
                       <span>
-                        {req.actual_weight
-                          ? formatWeightKg(req.actual_weight)
-                          : `Est. ${formatWeightKg(req.estimated_weight)}`}
+                        {req.actual_weight_kg
+                          ? formatWeightKg(req.actual_weight_kg)
+                          : `Est. ${formatWeightKg(req.estimated_weight_kg || 0)}`}
                       </span>
-                      {req.points_earned && (
+                      {req.points_earned ? (
                         <span className="font-bold text-[#276749]">
-                          +{req.points_earned} Poin
+                          +{formatPoints(req.points_earned)}
                         </span>
+                      ) : (
+                        <span className="text-[10px]">Menunggu Timbang</span>
                       )}
                     </div>
                   </div>
@@ -290,7 +373,7 @@ export default function MobileSimulatorPage() {
             <div className="p-4 rounded-2xl bg-brand-900 text-white space-y-2 text-center">
               <span className="text-xs text-brand-100">Saldo WastePoints</span>
               <div className="text-3xl font-extrabold tracking-tight">
-                {formatPoints(user.pointsBalance)}
+                1.250 poin
               </div>
               <p className="text-[10px] text-brand-100/80">
                 Buku besar diverifikasi sistem banjar desa
@@ -338,17 +421,17 @@ export default function MobileSimulatorPage() {
           <div className="p-4 space-y-4 text-xs">
             <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border">
               <div className="w-12 h-12 rounded-full bg-brand-900 text-white flex items-center justify-center text-sm font-bold">
-                WS
+                {displayName.slice(0, 2).toUpperCase()}
               </div>
               <div>
                 <h3 className="font-bold text-brand-900 text-sm">
-                  {user.name}
+                  {displayName}
                 </h3>
                 <span className="text-[11px] text-text-secondary block">
-                  {user.phone}
+                  {user?.email || "wayan.sudarsana@example.com"}
                 </span>
                 <span className="text-[10px] font-semibold text-[#276749]">
-                  {user.banjar}
+                  {displayBanjar}
                 </span>
               </div>
             </div>

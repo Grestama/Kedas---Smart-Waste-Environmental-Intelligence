@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   User,
   AlertTriangle,
+  Clock,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -20,22 +22,90 @@ import { Panel } from "@/components/ui/Panel";
 import { StatusBadge, getStatusBadgeConfig } from "@/components/ui/StatusBadge";
 import { StatusTimeline, TimelineStep } from "@/components/ui/StatusTimeline";
 import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
 import { useToast } from "@/components/ui/Toast";
-import { mockRequests } from "@/mocks/previewData";
+import { collectionService } from "@/services/collection";
+import { PickupRequest } from "@/types/collection";
 import { formatWITA, formatWeightKg, formatPoints } from "@/tokens";
+import { ApiError } from "@/lib/api-client";
 
 export default function DepositDetailPage() {
   const params = useParams();
   const router = useRouter();
   const toast = useToast();
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const reqId = (params?.id as string) || "REQ-2026-0012";
-  const request =
-    mockRequests.find((r) => r.id === reqId) || mockRequests[0];
+  const reqId = (params?.id as string) || "";
+  const [request, setRequest] = useState<PickupRequest | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Cancel modal states
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState(
+    "Jadwal berhalangan / sampah sudah dibawa ke pos banjar mandiri"
+  );
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  useEffect(() => {
+    async function loadDetail() {
+      setIsLoading(true);
+      try {
+        const data = await collectionService.getPickupRequestDetail(reqId);
+        setRequest(data);
+      } catch (err) {
+        console.error("Gagal memuat detail setoran:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    if (reqId) {
+      loadDetail();
+    }
+  }, [reqId]);
+
+  const handleConfirmCancel = async () => {
+    if (!request) return;
+    setIsCancelling(true);
+    try {
+      const updated = await collectionService.cancelPickupRequest(
+        request.id,
+        cancelReason
+      );
+      setRequest(updated);
+      setIsCancelModalOpen(false);
+      toast.success(
+        "Setoran Dibatalkan",
+        `Permintaan setoran ${request.public_code || request.id} berhasil dibatalkan. Kuota slot telah dikembalikan.`
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof ApiError ? err.message : "Gagal membatalkan permohonan setoran.";
+      toast.error("Gagal Membatalkan", msg);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  if (isLoading || !request) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6">
+        <PageHeader
+          title="Memuat Detail Setoran..."
+          description="Mengambil data status dan riwayat timbangan dari server..."
+        />
+        <div className="p-12 rounded-xl bg-surface border border-border flex items-center justify-center space-x-3">
+          <div className="w-6 h-6 border-2 border-brand-900 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold text-text-secondary">
+            Memuat data transaksi setoran...
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   const badge = getStatusBadgeConfig(request.status);
+  const isCancellable =
+    request.status === "PENDING_ASSIGNMENT" || request.status === "ACCEPTED";
 
+  // Build timeline steps
   const timelineSteps: TimelineStep[] = [
     {
       title: "Permintaan Diajukan",
@@ -45,56 +115,66 @@ export default function DepositDetailPage() {
     },
     {
       title: "Dikonfirmasi & Dijadwalkan",
-      description: "Jadwal penjemputan disetujui koordinator lapangan.",
-      timestamp: formatWITA(request.scheduled_at),
+      description: request.assigned_collector_id
+        ? "Kolektor TPS3R telah ditugaskan."
+        : "Menunggu alokasi rute kolektor.",
+      timestamp: request.assigned_collector_id
+        ? formatWITA(request.created_at)
+        : undefined,
       status:
-        request.status === "diajukan"
+        request.status === "PENDING_ASSIGNMENT"
           ? "current"
-          : request.status === "dibatalkan"
+          : request.status === "CANCELLED"
           ? "error"
           : "completed",
     },
     {
-      title: "Penjemputan Lapangan",
-      description: "Petugas meluncur ke lokasi warga untuk mengangkut sampah.",
+      title: "Penjemputan & Inspeksi",
+      description:
+        request.status === "EN_ROUTE"
+          ? "Petugas sedang meluncur ke lokasi Anda."
+          : request.status === "ARRIVED"
+          ? "Petugas tiba di lokasi penjemputan."
+          : request.status === "INSPECTION"
+          ? "Pemeriksaan tingkat kontaminasi sampah."
+          : request.status === "COLLECTED" || request.status === "COMPLETED"
+          ? "Sampah telah diangkut ke pos TPS3R."
+          : "Menunggu kedatangan petugas.",
       status:
-        request.status === "dijemput"
+        request.status === "EN_ROUTE" ||
+        request.status === "ARRIVED" ||
+        request.status === "INSPECTION" ||
+        request.status === "COLLECTED"
           ? "current"
-          : request.status === "selesai"
+          : request.status === "COMPLETED"
           ? "completed"
           : "upcoming",
     },
     {
       title: "Penimbangan Resmi & Poin Terbit",
-      description: "Hasil timbang digital diverifikasi dan poin masuk ke buku besar.",
-      status: request.status === "selesai" ? "completed" : "upcoming",
+      description:
+        request.status === "COMPLETED"
+          ? `Timbangan tervalidasi (${formatWeightKg(request.actual_weight_kg || 0)}), WastePoints otomatis diterbitkan.`
+          : "Penimbangan digital terkalibrasi di pos.",
+      status: request.status === "COMPLETED" ? "completed" : "upcoming",
     },
   ];
-
-  const handleConfirmCancel = () => {
-    setIsCancelModalOpen(false);
-    toast.success(
-      "Setoran Dibatalkan (Pratinjau)",
-      `Permintaan setoran ${request.id} telah dibatalkan.`
-    );
-    router.push("/app/setoran");
-  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <PageHeader
-        title={`Detail Setoran ${request.id}`}
+        title={`Setoran: ${request.public_code || request.id}`}
         description={`Diajukan pada ${formatWITA(request.created_at)}`}
         badge={<StatusBadge variant={badge.variant} label={badge.label} />}
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },
           { label: "Setoran", href: "/app/setoran" },
-          { label: request.id },
+          { label: request.public_code || request.id },
         ]}
         actions={
           <Link href="/app/setoran">
             <Button variant="secondary" size="sm" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
-              Kembali
+              Kembali ke Daftar
             </Button>
           </Link>
         }
@@ -110,7 +190,10 @@ export default function DepositDetailPage() {
                   Kategori Sampah
                 </span>
                 <span className="text-base font-bold text-brand-900 mt-1 block">
-                  {request.category_name}
+                  {request.category?.name || "Plastik PET Bening"}
+                </span>
+                <span className="text-[11px] text-text-secondary font-mono mt-0.5 block">
+                  Tipe: {request.category?.category_type || "RECYCLABLE"}
                 </span>
               </div>
 
@@ -119,9 +202,10 @@ export default function DepositDetailPage() {
                   Metode Penyerahan
                 </span>
                 <span className="text-base font-bold text-brand-900 mt-1 block">
-                  {request.pickup_type === "pickup"
-                    ? "Jemput di Rumah"
-                    : "Antar Sendiri ke Pos"}
+                  Jemput di Rumah (TPS3R)
+                </span>
+                <span className="text-[11px] text-text-secondary mt-0.5 block">
+                  Armada Roda Tiga Desa
                 </span>
               </div>
 
@@ -130,18 +214,32 @@ export default function DepositDetailPage() {
                   Estimasi Awal Warga
                 </span>
                 <span className="text-base font-bold text-brand-900 mt-1 block">
-                  {formatWeightKg(request.estimated_weight)}
+                  {formatWeightKg(request.estimated_weight_kg || 0)}
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#E7F4EA] border border-[#BCE1C7]">
-                <span className="text-xs text-[#276749] uppercase tracking-wider block font-semibold">
+              <div
+                className={`p-3.5 rounded-xl border ${
+                  request.status === "COMPLETED"
+                    ? "bg-[#E7F4EA] border-[#BCE1C7]"
+                    : "bg-canvas border-border"
+                }`}
+              >
+                <span
+                  className={`text-xs uppercase tracking-wider block font-semibold ${
+                    request.status === "COMPLETED" ? "text-[#276749]" : "text-text-secondary"
+                  }`}
+                >
                   Bobot Resmi Timbangan
                 </span>
-                <span className="text-base font-bold text-[#276749] mt-1 block">
-                  {request.actual_weight
-                    ? formatWeightKg(request.actual_weight)
-                    : "Menunggu Timbang Lapangan"}
+                <span
+                  className={`text-base font-bold mt-1 block ${
+                    request.status === "COMPLETED" ? "text-[#276749]" : "text-text-primary"
+                  }`}
+                >
+                  {request.actual_weight_kg
+                    ? formatWeightKg(request.actual_weight_kg)
+                    : "Menunggu Verifikasi POS"}
                 </span>
               </div>
             </div>
@@ -168,27 +266,34 @@ export default function DepositDetailPage() {
             ) : null}
           </Panel>
 
-          {/* Location & Schedule */}
-          <Panel title="Lokasi & Jadwal Penjemputan">
+          {/* Location & Slot Schedule */}
+          <Panel title="Lokasi & Alokasi Slot Banjar">
             <div className="space-y-3 text-xs">
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-text-primary block">
-                    Alamat Penjemputan
+                    Alamat Penjemputan Resmi
                   </span>
-                  <span className="text-text-secondary">{request.address}</span>
+                  <span className="text-text-secondary">
+                    {request.address?.address_text || "Banjar Kaja, Jl. Kenanga No. 14, Desa Sukawati"}
+                  </span>
+                  {request.notes && (
+                    <p className="mt-1 p-2 rounded bg-canvas border border-border italic">
+                      Catatan warga: &ldquo;{request.notes}&rdquo;
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 pt-2 border-t border-border">
-                <Calendar className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-3 pt-2.5 border-t border-border">
+                <Clock className="w-4 h-4 text-brand-700 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-semibold text-text-primary block">
-                    Jadwal Penjemputan Resmi
+                    ID Alokasi Slot Kuota
                   </span>
-                  <span className="text-text-secondary">
-                    {formatWITA(request.scheduled_at)}
+                  <span className="text-text-secondary font-mono">
+                    {request.slot_id} (Kolektor: {request.assigned_collector_id || "Menunggu penugasan"})
                   </span>
                 </div>
               </div>
@@ -196,19 +301,19 @@ export default function DepositDetailPage() {
           </Panel>
         </div>
 
-        {/* Right Column: Timeline & Actions */}
+        {/* Right Column: Timeline & Action */}
         <div className="space-y-6">
-          <Panel title="Progres Status Setoran">
+          <Panel title="Tahapan Status Transaksi">
             <StatusTimeline steps={timelineSteps} />
           </Panel>
 
-          {request.status === "diajukan" && (
+          {isCancellable && (
             <div className="p-4 rounded-xl bg-surface border border-border space-y-3">
               <h4 className="text-xs font-bold text-brand-900 uppercase tracking-wider">
-                Tindakan Permintaan
+                Batalkan Permohonan
               </h4>
-              <p className="text-xs text-text-secondary">
-                Anda dapat membatalkan permohonan selama petugas belum ditugaskan.
+              <p className="text-xs text-text-secondary leading-relaxed">
+                Anda dapat membatalkan permohonan selama petugas belum tiba di lokasi. Kuota slot penjemputan akan otomatis dilepas kembali.
               </p>
               <Button
                 variant="danger"
@@ -216,24 +321,25 @@ export default function DepositDetailPage() {
                 className="w-full"
                 onClick={() => setIsCancelModalOpen(true)}
               >
-                Batalkan Permintaan
+                Batalkan Setoran Ini
               </Button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Cancellation Modal */}
       <Modal
         isOpen={isCancelModalOpen}
         onClose={() => setIsCancelModalOpen(false)}
         title="Konfirmasi Pembatalan Setoran"
-        description={`Apakah Anda yakin ingin membatalkan permohonan setoran ${request.id}?`}
+        description={`Setoran: ${request.public_code || request.id}`}
         footer={
           <>
             <Button
               variant="secondary"
               size="sm"
+              disabled={isCancelling}
               onClick={() => setIsCancelModalOpen(false)}
             >
               Kembali
@@ -241,6 +347,7 @@ export default function DepositDetailPage() {
             <Button
               variant="danger"
               size="sm"
+              isLoading={isCancelling}
               onClick={handleConfirmCancel}
             >
               Ya, Batalkan Setoran
@@ -248,9 +355,18 @@ export default function DepositDetailPage() {
           </>
         }
       >
-        <p className="text-xs text-text-secondary">
-          Setelah dibatalkan, petugas TPS3R tidak akan dijadwalkan ke alamat Anda. Anda dapat membuat permintaan baru kapan saja jika sudah siap.
-        </p>
+        <div className="space-y-3 text-xs">
+          <p className="text-text-secondary">
+            Alasan pembatalan diperlukan untuk evaluasi rute operasional pos TPS3R banjar:
+          </p>
+          <Input
+            label="Alasan Pembatalan"
+            required
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="Tuliskan alasan pembatalan..."
+          />
+        </div>
       </Modal>
     </div>
   );

@@ -1,48 +1,71 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { PlusCircle, Package, Filter, ArrowRight } from "lucide-react";
+import { PlusCircle, Package, ArrowRight, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatusBadge, getStatusBadgeConfig } from "@/components/ui/StatusBadge";
 import { DataTable, Column } from "@/components/ui/DataTable";
-import { mockRequests } from "@/mocks/previewData";
-import { formatWITA, formatWeightKg } from "@/tokens";
+import { collectionService } from "@/services/collection";
+import { PickupRequest } from "@/types/collection";
+import { formatWITA, formatWeightKg, formatPoints } from "@/tokens";
 
 export default function UserDepositsPage() {
   const router = useRouter();
   const [filter, setFilter] = useState<string>("all");
+  const [requests, setRequests] = useState<PickupRequest[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const filteredData = mockRequests.filter((item) => {
-    if (filter === "all") return true;
-    return item.status === filter;
-  });
+  const loadRequests = useCallback(async (currentFilter: string) => {
+    setIsLoading(true);
+    try {
+      const data = await collectionService.getMyPickupRequests(currentFilter);
+      setRequests(data);
+    } catch (err) {
+      console.error("Gagal memuat daftar setoran:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const columns: Column<(typeof mockRequests)[0]>[] = [
+  useEffect(() => {
+    loadRequests(filter);
+  }, [filter, loadRequests]);
+
+  const columns: Column<PickupRequest>[] = [
     {
-      key: "id",
-      header: "ID Setoran",
+      key: "public_code",
+      header: "Kode / ID Setoran",
       render: (item) => (
-        <span className="font-mono font-semibold text-brand-900">{item.id}</span>
+        <div>
+          <span className="font-mono font-bold text-brand-900 block">
+            {item.public_code || item.id}
+          </span>
+          <span className="text-[11px] text-text-secondary font-mono">
+            {item.id}
+          </span>
+        </div>
       ),
     },
     {
-      key: "category_name",
-      header: "Kategori & Tipe",
+      key: "category",
+      header: "Kategori Material",
       render: (item) => (
         <div>
-          <span className="font-semibold block">{item.category_name}</span>
-          <span className="text-[11px] text-text-secondary">
-            {item.pickup_type === "pickup" ? "Jemput di Rumah" : "Antar ke Pos Banjar"}
+          <span className="font-semibold block text-text-primary">
+            {item.category?.name || "Material Terpilah"}
+          </span>
+          <span className="text-[11px] text-text-secondary font-mono">
+            Dibuat: {formatWITA(item.created_at, { dateStyle: "short", timeStyle: "short" })}
           </span>
         </div>
       ),
     },
     {
       key: "status",
-      header: "Status",
+      header: "Status Penjemputan",
       render: (item) => {
         const badge = getStatusBadgeConfig(item.status);
         return <StatusBadge variant={badge.variant} label={badge.label} size="sm" />;
@@ -50,22 +73,30 @@ export default function UserDepositsPage() {
     },
     {
       key: "weight",
-      header: "Bobot",
+      header: "Bobot Timbang",
       render: (item) => (
         <span>
-          {item.actual_weight
-            ? formatWeightKg(item.actual_weight)
-            : `Est. ${formatWeightKg(item.estimated_weight)}`}
+          {item.actual_weight_kg
+            ? formatWeightKg(item.actual_weight_kg)
+            : item.estimated_weight_kg
+            ? `Est. ${formatWeightKg(item.estimated_weight_kg)}`
+            : "-"}
         </span>
       ),
     },
     {
       key: "points",
-      header: "Poin Diperoleh",
+      header: "WastePoints",
       align: "right",
       render: (item) => (
-        <span className={item.points_earned ? "font-bold text-[#276749]" : "text-text-secondary"}>
-          {item.points_earned ? `+${item.points_earned} poin` : "-"}
+        <span
+          className={
+            item.points_earned
+              ? "font-bold text-[#276749]"
+              : "text-text-secondary text-xs"
+          }
+        >
+          {item.points_earned ? `+${formatPoints(item.points_earned)}` : "Menunggu Timbang"}
         </span>
       ),
     },
@@ -75,7 +106,7 @@ export default function UserDepositsPage() {
       align: "right",
       render: (item) => (
         <Link href={`/app/setoran/${item.id}`} onClick={(e) => e.stopPropagation()}>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" aria-label={`Buka detail ${item.id}`}>
             <ArrowRight className="w-4 h-4" />
           </Button>
         </Link>
@@ -87,17 +118,27 @@ export default function UserDepositsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Daftar Setoran Sampah Terpilah"
-        description="Kelola dan pantau seluruh riwayat permohonan setoran sampah Anda."
+        description="Kelola dan pantau seluruh riwayat permohonan setoran sampah rumah tangga Anda."
         breadcrumbs={[
           { label: "Dashboard", href: "/app" },
           { label: "Setoran Saya" },
         ]}
         actions={
-          <Link href="/app/setoran/baru">
-            <Button variant="primary" leftIcon={<PlusCircle className="w-4 h-4" />}>
-              Buat Setoran Baru
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => loadRequests(filter)}
+              leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+            >
+              Muat Ulang
             </Button>
-          </Link>
+            <Link href="/app/setoran/baru">
+              <Button variant="primary" size="sm" leftIcon={<PlusCircle className="w-4 h-4" />}>
+                Buat Setoran Baru
+              </Button>
+            </Link>
+          </div>
         }
       />
 
@@ -105,10 +146,10 @@ export default function UserDepositsPage() {
       <div className="flex flex-wrap items-center gap-2">
         {[
           { id: "all", label: "Semua Setoran" },
-          { id: "diajukan", label: "Diajukan" },
-          { id: "dijemput", label: "Dalam Penjemputan" },
-          { id: "selesai", label: "Selesai Ditimbang" },
-          { id: "dibatalkan", label: "Dibatalkan" },
+          { id: "PENDING_ASSIGNMENT", label: "Diajukan" },
+          { id: "EN_ROUTE", label: "Dalam Penjemputan" },
+          { id: "COMPLETED", label: "Selesai Ditimbang" },
+          { id: "CANCELLED", label: "Dibatalkan" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -127,11 +168,12 @@ export default function UserDepositsPage() {
       {/* Data Table */}
       <DataTable
         columns={columns}
-        data={filteredData}
+        data={requests}
+        isLoading={isLoading}
         keyExtractor={(item) => item.id}
         onRowClick={(item) => router.push(`/app/setoran/${item.id}`)}
-        emptyTitle="Tidak Ada Setoran Ditemukan"
-        emptyDescription="Belum ada setoran pada kategori filter ini. Anda dapat membuat setoran sampah baru sekarang."
+        emptyTitle="Belum Ada Setoran"
+        emptyDescription="Belum ada setoran sampah pada kriteria filter ini. Mulai pilah sampah dan buat jadwal penjemputan sekarang."
         emptyAction={
           <Link href="/app/setoran/baru">
             <Button variant="primary" size="sm" leftIcon={<PlusCircle className="w-4 h-4" />}>

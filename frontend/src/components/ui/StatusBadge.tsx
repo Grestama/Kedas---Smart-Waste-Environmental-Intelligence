@@ -114,19 +114,35 @@ export function getStatusBadgeConfig(statusStr: string): {
     case "aktif":
     case "clean":
     case "bersih":
-    case "diterima":
       return { variant: "success", label: "Selesai" };
 
     case "pending":
+    case "pending_assignment":
     case "diajukan":
     case "submitted":
       return { variant: "info", label: "Diajukan" };
+
+    case "accepted":
+    case "diterima":
+      return { variant: "info", label: "Diterima Petugas" };
 
     case "confirmed":
     case "dikonfirmasi":
     case "scheduled":
     case "terjadwal":
       return { variant: "info", label: "Terjadwal" };
+
+    case "en_route":
+      return { variant: "warning", label: "Menuju Lokasi" };
+
+    case "arrived":
+      return { variant: "warning", label: "Tiba di Lokasi" };
+
+    case "inspection":
+      return { variant: "warning", label: "Inspeksi Kualitas" };
+
+    case "collected":
+      return { variant: "warning", label: "Sampah Diangkut" };
 
     case "in_progress":
     case "picked_up":
