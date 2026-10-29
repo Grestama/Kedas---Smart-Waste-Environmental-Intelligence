@@ -17,7 +17,10 @@ import {
   FileBarChart2,
   History,
   Shield,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import { useToast } from "@/components/ui/Toast";
 import { mockUsers } from "@/mocks/previewData";
 
 interface NavSection {
@@ -107,6 +110,15 @@ export function AdminSidebar() {
     },
   ];
 
+  const { user, logout } = useAuth();
+  const toast = useToast();
+  const adminName = user?.full_name || mockUsers.admin.name;
+
+  const handleLogout = async () => {
+    toast.info("Keluar Akun", "Anda telah keluar dari konsol admin.");
+    await logout();
+  };
+
   return (
     <aside className="w-64 bg-[#14231E] text-white/90 border-r border-[#0E1A16] flex flex-col shrink-0 min-h-screen">
       {/* Brand Header */}
@@ -177,19 +189,30 @@ export function AdminSidebar() {
         ))}
       </div>
 
-      {/* Admin Profile Footer */}
-      <div className="p-4 border-t border-white/10 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-200 flex items-center justify-center text-xs font-bold">
-          AD
+      {/* Admin Profile Footer & Logout */}
+      <div className="p-4 border-t border-white/10 space-y-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-200 flex items-center justify-center text-xs font-bold">
+            AD
+          </div>
+          <div className="text-left min-w-0">
+            <p className="text-xs font-semibold text-white truncate">
+              {adminName}
+            </p>
+            <p className="text-[10px] text-white/50 truncate">
+              {user?.email || mockUsers.admin.jurisdiction}
+            </p>
+          </div>
         </div>
-        <div className="text-left min-w-0">
-          <p className="text-xs font-semibold text-white truncate">
-            {mockUsers.admin.name}
-          </p>
-          <p className="text-[10px] text-white/50 truncate">
-            {mockUsers.admin.jurisdiction}
-          </p>
-        </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold text-rose-300 hover:bg-white/10 rounded-lg border border-rose-400/30 transition-colors"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Keluar Konsol Admin</span>
+        </button>
       </div>
     </aside>
   );

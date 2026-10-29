@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -13,14 +13,31 @@ import {
   Leaf,
   Bell,
   HelpCircle,
-  User,
+  User as UserIcon,
   Recycle,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/context/auth-context";
+import { useToast } from "@/components/ui/Toast";
 import { mockUsers } from "@/mocks/previewData";
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
 
 export function UserSidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
+  const toast = useToast();
+
+  const displayName = user?.full_name || mockUsers.warga.name;
+  const displayBanjar = mockUsers.warga.banjar;
 
   const navItems = [
     { href: "/app", label: "Beranda", icon: <Home className="w-4 h-4" /> },
@@ -52,7 +69,7 @@ export function UserSidebar() {
     {
       href: "/app/profil",
       label: "Profil & Alamat",
-      icon: <User className="w-4 h-4" />,
+      icon: <UserIcon className="w-4 h-4" />,
     },
     {
       href: "/app/bantuan",
@@ -60,6 +77,11 @@ export function UserSidebar() {
       icon: <HelpCircle className="w-4 h-4" />,
     },
   ];
+
+  const handleLogout = async () => {
+    toast.info("Keluar Akun", "Anda telah keluar dari sesi warga.");
+    await logout();
+  };
 
   return (
     <aside className="w-64 bg-surface border-r border-border flex flex-col shrink-0 min-h-screen">
@@ -74,7 +96,7 @@ export function UserSidebar() {
               WasteLink Warga
             </span>
             <span className="text-[10px] text-text-secondary mt-1 block">
-              {mockUsers.warga.banjar}
+              {displayBanjar}
             </span>
           </div>
         </Link>
@@ -121,8 +143,8 @@ export function UserSidebar() {
         })}
       </nav>
 
-      {/* Point Balance Card in Sidebar */}
-      <div className="p-4 border-t border-border">
+      {/* Logout button & point balance */}
+      <div className="p-4 border-t border-border space-y-3">
         <div className="bg-[#FAFBF9] border border-border rounded-xl p-3.5">
           <div className="flex items-center justify-between text-xs text-text-secondary mb-1">
             <span>Saldo WastePoints</span>
@@ -139,12 +161,25 @@ export function UserSidebar() {
             Lihat Riwayat & Poin &rarr;
           </Link>
         </div>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full flex items-center justify-center gap-2 py-2 px-3 text-xs font-semibold text-[#A43F35] hover:bg-[#FBEAE7] rounded-lg border border-[#F5C6BF] transition-colors"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Keluar dari Akun</span>
+        </button>
       </div>
     </aside>
   );
 }
 
 export function UserHeader() {
+  const { user, logout } = useAuth();
+  const displayName = user?.full_name || mockUsers.warga.name;
+  const initials = getInitials(displayName);
+
   return (
     <header className="h-16 bg-surface border-b border-border px-6 flex items-center justify-between sticky top-8 z-30">
       <div className="flex items-center gap-3">
@@ -173,14 +208,14 @@ export function UserHeader() {
           className="flex items-center gap-2.5 hover:opacity-85 transition-opacity"
         >
           <div className="w-8 h-8 rounded-full bg-brand-900 text-white flex items-center justify-center text-xs font-semibold">
-            WS
+            {initials}
           </div>
           <div className="text-left hidden md:block">
             <span className="text-xs font-semibold text-text-primary block leading-tight">
-              {mockUsers.warga.name}
+              {displayName}
             </span>
             <span className="text-[10px] text-text-secondary block">
-              Warga Terdaftar
+              {user?.email || "Warga Terdaftar"}
             </span>
           </div>
         </Link>

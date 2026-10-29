@@ -3,40 +3,75 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Recycle, ArrowRight } from "lucide-react";
+import { Recycle, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { useToast } from "@/components/ui/Toast";
+import { useAuth } from "@/context/auth-context";
+import { ApiError } from "@/lib/api-client";
 
 export default function RegisterPage() {
   const router = useRouter();
   const toast = useToast();
+  const { register, loginAsMockRole } = useAuth();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [banjar, setBanjar] = useState("banjar_kaja");
   const [password, setPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
+
     if (!agreeTerms) {
-      toast.error("Persetujuan Diperlukan", "Harap setujui syarat & ketentuan pemilahan banjar.");
+      setErrorMessage("Harap setujui syarat & ketentuan pemilahan banjar.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMessage("Kata sandi harus minimal 8 karakter.");
       return;
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const newUser = await register({
+        full_name: name,
+        email: email || undefined,
+        phone: phone || undefined,
+        password,
+      });
+
       toast.success(
-        "Pendaftaran Berhasil (Pratinjau)",
-        "Akun warga Anda siap digunakan untuk menyetor sampah."
+        "Pendaftaran Berhasil",
+        `Selamat datang di WasteLink Bali, ${newUser.full_name}!`
       );
       router.push("/app");
-    }, 600);
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        if (err.status === 0 || err.code === "NETWORK_ERROR") {
+          toast.info(
+            "Mode Pengujian Diaktifkan",
+            "Server backend lokal belum aktif. Mendaftarkan akun dalam mode simulasi."
+          );
+          loginAsMockRole("user");
+          router.push("/app");
+          return;
+        }
+        setErrorMessage(err.message || "Gagal mendaftarkan akun. Periksa data Anda.");
+      } else {
+        setErrorMessage("Terjadi kesalahan sistem saat registrasi.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -54,6 +89,19 @@ export default function RegisterPage() {
           </p>
         </div>
 
+        {errorMessage && (
+          <div
+            role="alert"
+            className="mb-4 p-3 rounded-lg bg-[#FBEAE7] border border-[#F5C6BF] text-[#A43F35] text-xs flex items-start gap-2"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-semibold block">Gagal Mendaftar</span>
+              <span>{errorMessage}</span>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label="Nama Lengkap Sesuai KTP"
@@ -66,7 +114,6 @@ export default function RegisterPage() {
           <Input
             label="Alamat Email Aktif"
             type="email"
-            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="nama@email.com"

@@ -4,54 +4,62 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Globe, User, Smartphone, Truck, ShieldAlert } from "lucide-react";
+import { Globe, User as UserIcon, Smartphone, Truck, ShieldAlert, LogOut, Check } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 
 export function WorkspaceSwitchBar() {
   const pathname = usePathname();
+  const { user, activeRole, isAuthenticated, logout, switchActiveRole, loginAsMockRole } = useAuth();
 
   const links = [
     {
       href: "/",
-      label: "Portal Publik",
+      label: "Publik",
       icon: <Globe className="w-3.5 h-3.5" />,
       active: pathname === "/" || pathname.startsWith("/panduan") || pathname.startsWith("/masuk") || pathname.startsWith("/daftar"),
     },
     {
       href: "/app",
       label: "Warga (Web)",
-      icon: <User className="w-3.5 h-3.5" />,
+      icon: <UserIcon className="w-3.5 h-3.5" />,
       active: pathname.startsWith("/app"),
     },
     {
       href: "/mobile",
-      label: "Warga (Mobile Simulator)",
+      label: "Warga (Mobile)",
       icon: <Smartphone className="w-3.5 h-3.5" />,
       active: pathname.startsWith("/mobile"),
     },
     {
       href: "/staff",
-      label: "Petugas / Collector (POS)",
+      label: "Petugas POS",
       icon: <Truck className="w-3.5 h-3.5" />,
       active: pathname.startsWith("/staff"),
     },
     {
       href: "/admin",
-      label: "Admin / Operator",
+      label: "Admin Konsol",
       icon: <ShieldAlert className="w-3.5 h-3.5" />,
       active: pathname.startsWith("/admin"),
     },
   ];
 
   return (
-    <div className="bg-[#152e27] text-white text-xs py-1.5 px-4 border-b border-[#244b3f] flex items-center justify-between z-50 sticky top-0 overflow-x-auto shadow-sm">
-      <div className="flex items-center space-x-2 shrink-0 mr-4">
+    <div className="bg-[#122620] text-white text-xs py-1.5 px-4 border-b border-[#1d3d33] flex items-center justify-between z-50 sticky top-0 overflow-x-auto shadow-sm gap-3">
+      <div className="flex items-center space-x-2 shrink-0">
         <span className="font-bold tracking-wider uppercase text-emerald-400 text-[11px]">
           WasteLink Bali
         </span>
-        <span className="text-white/40">|</span>
-        <span className="text-white/70 hidden sm:inline text-[11px]">
-          Pratinjau Navigasi Multi-Workspace
-        </span>
+        <span className="text-white/30">|</span>
+        {isAuthenticated && user ? (
+          <span className="text-[11px] text-white/80 hidden sm:inline">
+            Akun: <strong>{user.full_name}</strong> ({activeRole})
+          </span>
+        ) : (
+          <span className="text-white/60 text-[11px] hidden sm:inline">
+            Mode Tamu
+          </span>
+        )}
       </div>
 
       <div className="flex items-center space-x-1 shrink-0">
@@ -70,6 +78,18 @@ export function WorkspaceSwitchBar() {
             <span>{link.label}</span>
           </Link>
         ))}
+
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={() => logout()}
+            title="Keluar dari sesi saat ini"
+            className="ml-2 flex items-center gap-1 px-2 py-1 rounded text-[11px] text-rose-300 hover:text-white hover:bg-rose-950 transition-colors"
+          >
+            <LogOut className="w-3 h-3" />
+            <span className="hidden md:inline">Keluar</span>
+          </button>
+        )}
       </div>
     </div>
   );
