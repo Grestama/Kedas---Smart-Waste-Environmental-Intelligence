@@ -138,10 +138,12 @@ VALID_TRANSITIONS: dict[str, set[str]] = {
     PickupStatus.EN_ROUTE.value: {
         PickupStatus.ARRIVED.value,
         PickupStatus.CANCELLED.value,
+        PickupStatus.REJECTED.value,
     },
     PickupStatus.ARRIVED.value: {
         PickupStatus.INSPECTION.value,
         PickupStatus.CANCELLED.value,
+        PickupStatus.REJECTED.value,
     },
     PickupStatus.INSPECTION.value: {
         PickupStatus.WEIGHED.value,
@@ -427,6 +429,21 @@ def accept_task_atomic(
     db: Session, collector: User, pickup_id: str, request_id: str | None = None
 ) -> PickupRequest:
     """Atomic claim of a collection task with row locking to prevent race conditions."""
+    # 0. Verify that collector is an active verified COLLECTOR
+    stmt_col = (
+        select(UserRole)
+        .join(Role)
+        .where(
+            UserRole.user_id == collector.id,
+            Role.code == "COLLECTOR",
+            UserRole.verification_status == VerificationStatus.ACTIVE.value,
+        )
+    )
+    if not db.scalar(stmt_col):
+        raise AuthorizationError(
+            "Hanya petugas dengan role COLLECTOR terverifikasi aktif yang dapat menerima tugas."
+        )
+
     # 1. Lock pickup row
     stmt = select(PickupRequest).where(PickupRequest.id == pickup_id).with_for_update()
     pickup = db.scalar(stmt)
@@ -434,7 +451,13 @@ def accept_task_atomic(
     if not pickup:
         raise NotFoundError("Tugas penjemputan tidak ditemukan.")
 
-    # 2. Check availability
+    # 2. Check service mode
+    if pickup.service_mode != "PICKUP":
+        raise ValidationError(
+            "Permintaan ini bertipe setor mandiri ke TPS3R, bukan penjemputan keliling armada trike."
+        )
+
+    # 3. Check availability
     if (
         pickup.status != PickupStatus.PENDING_ASSIGNMENT.value
         or pickup.assigned_collector_id is not None
@@ -443,11 +466,11 @@ def accept_task_atomic(
             "Tugas penjemputan sudah diambil oleh petugas lain atau status tidak valid."
         )
 
-    # 3. Assign collector and update status
+    # 4. Assign collector and update status
     pickup.assigned_collector_id = collector.id
     pickup.status = PickupStatus.ACCEPTED.value
 
-    # 4. Record event
+    # 5. Record event
     event = PickupStatusEvent(
         pickup_request_id=pickup.id,
         from_status=PickupStatus.PENDING_ASSIGNMENT.value,
@@ -497,6 +520,16 @@ def update_task_status(
         raise ValidationError(
             f"Transisi status dari [{pickup.status}] ke [{new_status}] tidak diizinkan."
         )
+
+    # Check mandatory reason on cancellation or rejection
+    if new_status in (PickupStatus.CANCELLED.value, PickupStatus.REJECTED.value):
+        if not (reason and reason.strip()):
+            raise ValidationError(
+                f"Transisi ke status [{new_status}] wajib menyertakan alasan kendala lapangan."
+            )
+        slot = db.get(CollectionSlot, pickup.slot_id)
+        if slot and slot.booked_capacity > 0:
+            slot.booked_capacity = max(0, slot.booked_capacity - 1)
 
     prev_status = pickup.status
     pickup.status = new_status
