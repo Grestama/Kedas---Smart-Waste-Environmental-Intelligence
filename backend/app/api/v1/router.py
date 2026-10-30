@@ -12,6 +12,7 @@ from app.api.v1.admin_pickups import router as admin_pickups_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.collector_applications import router as collector_applications_router
 from app.api.v1.collector_tasks import router as collector_tasks_router
+from app.api.v1.community import router as community_router
 from app.api.v1.evidence import router as evidence_router
 from app.api.v1.facility import router as facility_router
 from app.api.v1.health import router as health_router
@@ -21,6 +22,7 @@ from app.api.v1.me import router as me_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.pickup_requests import router as pickup_requests_router
 from app.api.v1.points import router as points_router
+from app.api.v1.programs import router as programs_router
 from app.api.v1.service_areas import router as service_areas_router
 from app.api.v1.waste_categories import router as waste_categories_router
 from app.api.v1.weights import router as weights_router
@@ -71,3 +73,9 @@ api_v1_router.include_router(facility_router, prefix="/facilities", tags=["Facil
 
 # --- Phase 4: Admin Operations, Reporting, and Audit ---
 api_v1_router.include_router(admin_ops_router)
+
+# --- Phase 6: Programs, Funding & CSR ---
+api_v1_router.include_router(programs_router)
+
+# --- Phase 6: Community Banjar, Cleanups & Hazardous Waste ---
+api_v1_router.include_router(community_router)

@@ -36,6 +36,23 @@ from app.modules.collection.models import (
     ServiceArea,
 )
 
+# --- Community & Special Waste Models ---
+from app.modules.community.models import (
+    BanjarOfficial,
+    BanjarProfile,
+    CleanupAction,
+    CleanupActionStatus,
+    CleanupActionType,
+    CommunityComplaint,
+    CommunityEvent,
+    CommunityEventStatus,
+    CommunityEventType,
+    ComplaintStatus,
+    HazardousManifestStatus,
+    HazardousWasteManifest,
+    HazardType,
+)
+
 # --- Evidence Models ---
 from app.modules.evidence.models import (
     EvidenceEntityType,
@@ -61,6 +78,10 @@ from app.modules.facility.models import (
 from app.modules.funding.models import (
     FundingProgram,
     FundingProgramStatus,
+    ProgramBudgetAllocation,
+    ProgramSponsorship,
+    ProgramType,
+    SponsorType,
 )
 
 # --- Inspection Models ---
@@ -252,6 +273,23 @@ __all__ = [
     "LedgerEntryStatus",
     "FundingProgram",
     "FundingProgramStatus",
+    "ProgramType",
+    "SponsorType",
+    "ProgramSponsorship",
+    "ProgramBudgetAllocation",
+    "BanjarProfile",
+    "BanjarOfficial",
+    "CommunityEvent",
+    "CommunityEventType",
+    "CommunityEventStatus",
+    "CommunityComplaint",
+    "ComplaintStatus",
+    "CleanupAction",
+    "CleanupActionType",
+    "CleanupActionStatus",
+    "HazardousWasteManifest",
+    "HazardType",
+    "HazardousManifestStatus",
     "Partner",
     "PartnerType",
     "PartnerVerificationStatus",
