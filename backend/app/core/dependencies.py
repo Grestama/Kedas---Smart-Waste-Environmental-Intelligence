@@ -135,3 +135,5 @@ class RequireRole:
 require_admin = RequireRole(["ADMIN"])
 require_collector = RequireRole(["COLLECTOR"])
 require_admin_or_collector = RequireRole(["ADMIN", "COLLECTOR"])
+require_operator = RequireRole(["OPERATOR", "ADMIN"])
+require_facility_staff = RequireRole(["OPERATOR", "STAFF", "ADMIN", "COLLECTOR"])

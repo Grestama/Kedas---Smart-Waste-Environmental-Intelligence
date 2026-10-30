@@ -49,6 +49,7 @@ def ensure_system_roles_exist(db: Session) -> None:
     default_roles = [
         ("USER", "Warga / Pengguna", "Role standar pengguna untuk menyetor sampah"),
         ("COLLECTOR", "Petugas Pengangkut", "Petugas terverifikasi untuk mengangkut sampah"),
+        ("OPERATOR", "Operator Fasilitas", "Petugas operasional TPS3R, TPST, atau Bank Sampah"),
         ("ADMIN", "Administrator", "Pengelola operasional sistem"),
         ("FINANCE", "Pengelola Keuangan", "Akses anggaran dan rekonsiliasi keuangan"),
         ("BUYER", "Mitra Pembeli", "Mitra pengolah dan pembeli daur ulang"),

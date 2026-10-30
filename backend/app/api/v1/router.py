@@ -13,6 +13,7 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.collector_applications import router as collector_applications_router
 from app.api.v1.collector_tasks import router as collector_tasks_router
 from app.api.v1.evidence import router as evidence_router
+from app.api.v1.facility import router as facility_router
 from app.api.v1.health import router as health_router
 from app.api.v1.inspections import router as inspections_router
 from app.api.v1.marketplace import router as marketplace_router
@@ -64,6 +65,9 @@ api_v1_router.include_router(marketplace_router, tags=["Marketplace & Deliveries
 
 # --- Phase 3: Notifications ---
 api_v1_router.include_router(notifications_router, tags=["Notifications"])
+
+# --- Phase 4: Facility Reception, Sorting & Bank Sampah ---
+api_v1_router.include_router(facility_router, prefix="/facilities", tags=["Facilities & Bank Sampah"])
 
 # --- Phase 4: Admin Operations, Reporting, and Audit ---
 api_v1_router.include_router(admin_ops_router)

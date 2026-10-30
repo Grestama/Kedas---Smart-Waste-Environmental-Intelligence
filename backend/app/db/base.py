@@ -43,6 +43,20 @@ from app.modules.evidence.models import (
     EvidenceFileStatus,
 )
 
+# --- Facility & Waste Bank Models ---
+from app.modules.facility.models import (
+    BankTransactionType,
+    Facility,
+    FacilityReceipt,
+    FacilityType,
+    MovementType,
+    QualityGrade,
+    ReceiptStatus,
+    StockMovement,
+    WasteBankMember,
+    WasteBankTransaction,
+)
+
 # --- Funding Models ---
 from app.modules.funding.models import (
     FundingProgram,
@@ -235,4 +249,14 @@ __all__ = [
     "Notification",
     "NotificationOutbox",
     "OutboxStatus",
+    "Facility",
+    "FacilityType",
+    "FacilityReceipt",
+    "QualityGrade",
+    "ReceiptStatus",
+    "StockMovement",
+    "MovementType",
+    "WasteBankMember",
+    "WasteBankTransaction",
+    "BankTransactionType",
 ]
