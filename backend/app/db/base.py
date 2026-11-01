@@ -27,6 +27,16 @@ from app.modules.account.models import (
     VerificationStatus,
 )
 
+# --- AI Innovation Models ---
+from app.modules.ai.models import (
+    AICapability,
+    AIInteractionLog,
+    KnowledgeChunk,
+    KnowledgeDocument,
+    KnowledgeDocumentStatus,
+    KnowledgeSourceType,
+)
+
 # --- Collection & Scheduling Models ---
 from app.modules.collection.models import (
     CollectionSlot,
@@ -40,6 +50,8 @@ from app.modules.collection.models import (
 from app.modules.community.models import (
     BanjarOfficial,
     BanjarProfile,
+    CDOAAgreement,
+    CDOAStatus,
     CleanupAction,
     CleanupActionStatus,
     CleanupActionType,
@@ -279,6 +291,8 @@ __all__ = [
     "ProgramBudgetAllocation",
     "BanjarProfile",
     "BanjarOfficial",
+    "CDOAAgreement",
+    "CDOAStatus",
     "CommunityEvent",
     "CommunityEventType",
     "CommunityEventStatus",
@@ -323,4 +337,10 @@ __all__ = [
     "WasteBankMember",
     "WasteBankTransaction",
     "BankTransactionType",
+    "KnowledgeDocument",
+    "KnowledgeDocumentStatus",
+    "KnowledgeSourceType",
+    "KnowledgeChunk",
+    "AICapability",
+    "AIInteractionLog",
 ]

@@ -9,9 +9,9 @@ export default function StaffLayout({
 }) {
   return (
     <AuthGuard allowedRoles={["COLLECTOR", "ADMIN"]} workspaceName="Petugas POS">
-      <div className="min-h-screen flex bg-canvas">
-        {/* Desktop Staff POS Sidebar */}
-        <div className="hidden lg:block shrink-0">
+      <div className="min-h-[calc(100vh-var(--workspace-bar-height))] flex bg-canvas">
+        {/* Desktop Staff POS Sidebar - Sticky anchored so it never scrolls off or gets clipped */}
+        <div className="hidden lg:block shrink-0 sticky top-[var(--workspace-bar-height)] h-[calc(100vh-var(--workspace-bar-height))] z-20">
           <StaffSidebar />
         </div>
 

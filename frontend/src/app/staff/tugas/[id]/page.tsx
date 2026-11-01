@@ -48,6 +48,8 @@ import {
   EvidenceResponse,
 } from "@/types/staff";
 import { ApiError } from "@/lib/api-client";
+import { enqueueWeighing } from "@/lib/offline-queue";
+import { OfflineOutboxBanner } from "@/components/staff/OfflineOutboxBanner";
 
 export default function TaskDetailPosTerminalPage({
   params,
@@ -218,15 +220,26 @@ export default function TaskDetailPosTerminalPage({
       }
     }
 
+    const weightPayload = {
+      method: weighingMethod,
+      gross_weight_kg: isGrossTareMode ? grossNum : null,
+      tare_weight_kg: isGrossTareMode ? tareNum : null,
+      net_weight_kg: computedNet,
+      correction_reason: correctionReasonInput || null,
+    };
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      enqueueWeighing(task.id, task.public_code, weightPayload);
+      showToast(
+        "info",
+        `Mode Offline: Timbangan (${computedNet} kg) diamankan ke antrean lokal perangkat. Akan disinkronkan saat online.`
+      );
+      return;
+    }
+
     setIsSubmittingWeight(true);
     try {
-      const res = await recordWeight(task.id, {
-        method: weighingMethod,
-        gross_weight_kg: isGrossTareMode ? grossNum : null,
-        tare_weight_kg: isGrossTareMode ? tareNum : null,
-        net_weight_kg: computedNet,
-        correction_reason: correctionReasonInput || null,
-      });
+      const res = await recordWeight(task.id, weightPayload);
 
       showToast(
         "success",
@@ -236,7 +249,21 @@ export default function TaskDetailPosTerminalPage({
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Gagal menyimpan hasil timbangan.";
-      showToast("error", msg);
+      if (
+        typeof navigator !== "undefined" &&
+        (!navigator.onLine ||
+          msg.includes("fetch failed") ||
+          msg.includes("Jaringan Error") ||
+          msg.includes("NETWORK_ERROR"))
+      ) {
+        enqueueWeighing(task.id, task.public_code, weightPayload);
+        showToast(
+          "info",
+          `Koneksi terputus: Timbangan (${computedNet} kg) diamankan ke antrean lokal perangkat.`
+        );
+      } else {
+        showToast("error", msg);
+      }
     } finally {
       setIsSubmittingWeight(false);
     }
@@ -334,6 +361,9 @@ export default function TaskDetailPosTerminalPage({
           </div>
         }
       />
+
+      {/* Offline Outbox Queue Banner (GAP-005) */}
+      <OfflineOutboxBanner onSyncComplete={loadTask} />
 
       {/* Main Grid: 2 Columns on Desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -660,7 +690,7 @@ export default function TaskDetailPosTerminalPage({
               </div>
 
               {latestWeight && (
-                <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded bg-brand-50 text-brand-800 border border-brand-200">
+                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#E7F4EA] text-[#276749] border border-[#BCE1C7]">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Versi {latestWeight.version} ({latestWeight.net_weight_kg} kg)
                 </span>
@@ -670,11 +700,11 @@ export default function TaskDetailPosTerminalPage({
             {/* Gating Check: Must pass inspection first */}
             {!isInspectionPassed ? (
               <div className="p-4 bg-canvas border border-dashed border-border rounded-xl text-center space-y-2">
-                <Lock className="w-6 h-6 text-text-muted mx-auto opacity-60" />
+                <Lock className="w-6 h-6 text-text-secondary mx-auto opacity-60" />
                 <h4 className="text-xs font-bold text-text-primary">
                   Formulir Penimbangan Terkunci
                 </h4>
-                <p className="text-xs text-text-muted max-w-sm mx-auto">
+                <p className="text-xs text-text-secondary max-w-sm mx-auto">
                   {isInspectionRejected
                     ? "Penimbangan tidak dapat dilakukan karena status inspeksi QC adalah REJECTED (Ditolak)."
                     : "Harap selesaikan inspeksi QC dengan hasil ACCEPTED terlebih dahulu sebelum mencatat timbangan."}
@@ -749,7 +779,7 @@ export default function TaskDetailPosTerminalPage({
                 </div>
 
                 {/* Live Computed Net Display Box */}
-                <div className="p-4 bg-brand-50 border border-brand-200 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="p-4 bg-[#E8F0E9] border-2 border-[#D7E4D9] rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xs">
                   <div>
                     <span className="text-xs font-bold text-brand-900 uppercase tracking-wider">
                       Hasil Perhitungan Berat Bersih (Net Weight):
@@ -761,7 +791,7 @@ export default function TaskDetailPosTerminalPage({
                       <span className="text-sm font-bold text-brand-700">kg</span>
                     </div>
                     {isGrossTareMode && (
-                      <p className="text-xs text-text-muted mt-0.5">
+                      <p className="text-xs text-text-secondary mt-0.5">
                         Rumus: Bruto ({grossNum.toFixed(3)} kg) - Tara ({tareNum.toFixed(3)} kg)
                       </p>
                     )}
@@ -769,10 +799,10 @@ export default function TaskDetailPosTerminalPage({
 
                   <div className="text-right text-xs text-brand-900">
                     <p className="font-bold">Estimasi WastePoints:</p>
-                    <p className="text-base font-extrabold text-brand-700 font-mono">
+                    <p className="text-base font-extrabold text-[#276749] font-mono">
                       +{Math.round(computedNet * 30)} Pts
                     </p>
-                    <span className="text-[11px] text-text-muted">
+                    <span className="text-[11px] text-text-secondary">
                       (Dihitung otomatis oleh server backend)
                     </span>
                   </div>

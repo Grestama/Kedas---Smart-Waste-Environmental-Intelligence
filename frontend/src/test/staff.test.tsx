@@ -218,4 +218,74 @@ describe("Collector Field POS Operations & Business Rules (Tahap 4)", () => {
       });
     });
   });
+
+  describe("WL-AUD-002: Regression Tests for Staff Mutation Error Propagation", () => {
+    it("re-throws server ApiError on updateTaskStatus when backend rejects status transition", async () => {
+      const { apiClient } = await import("../lib/api-client");
+      const spy = vi.spyOn(apiClient, "post").mockRejectedValueOnce(
+        new ApiError(400, "Transisi status dari [ARRIVED] ke [COMPLETED] tidak diizinkan.", "INVALID_STATE_TRANSITION")
+      );
+
+      await expect(
+        updateTaskStatus("pick_sukawati_003", { status: "COMPLETED" })
+      ).rejects.toThrow("tidak diizinkan");
+
+      spy.mockRestore();
+    });
+
+    it("re-throws server ApiError on acceptTask when backend rejects with 403 or 400", async () => {
+      const { apiClient } = await import("../lib/api-client");
+      const spy = vi.spyOn(apiClient, "post").mockRejectedValueOnce(
+        new ApiError(403, "Hanya petugas terverifikasi yang dapat mengambil tugas.", "FORBIDDEN")
+      );
+
+      await expect(
+        acceptTask("pick_sukawati_001")
+      ).rejects.toThrow("Hanya petugas terverifikasi");
+
+      spy.mockRestore();
+    });
+  });
+
+  describe("GAP-005: Scoped Offline-First Outbox Queue for Field Weighing", () => {
+    it("enqueues weighing items to local outbox when offline and replays them successfully", async () => {
+      const {
+        enqueueWeighing,
+        getQueuedWeighings,
+        syncOfflineWeighings,
+        saveQueuedWeighings,
+      } = await import("../lib/offline-queue");
+      const { apiClient } = await import("../lib/api-client");
+
+      saveQueuedWeighings([]);
+      expect(getQueuedWeighings().length).toBe(0);
+
+      const queued = enqueueWeighing("task-offline-101", "WL-OFFLINE-01", {
+        method: "MANUAL_SCALE",
+        gross_weight_kg: 50.0,
+        tare_weight_kg: 5.0,
+        net_weight_kg: 45.0,
+        correction_reason: "Penimbangan luar jangkauan sinyal TPS3R",
+      });
+
+      expect(queued.id).toBeDefined();
+      expect(queued.status).toBe("QUEUED");
+      expect(getQueuedWeighings().length).toBe(1);
+
+      const spy = vi.spyOn(apiClient, "post").mockResolvedValueOnce({
+        id: "wt_verified_01",
+        pickup_request_id: "task-offline-101",
+        method: "MANUAL_SCALE",
+        net_weight_kg: 45.0,
+        points_awarded: 450,
+      });
+
+      const syncResult = await syncOfflineWeighings();
+      expect(syncResult.synced).toBe(1);
+      expect(syncResult.failed).toBe(0);
+      expect(getQueuedWeighings().length).toBe(0);
+
+      spy.mockRestore();
+    });
+  });
 });

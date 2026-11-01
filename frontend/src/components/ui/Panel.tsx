@@ -10,6 +10,7 @@ export interface PanelProps
   bodyClassName?: string;
   headerClassName?: string;
   footerClassName?: string;
+  interactive?: boolean;
 }
 
 export function Panel({
@@ -20,6 +21,7 @@ export function Panel({
   bodyClassName,
   headerClassName,
   footerClassName,
+  interactive = false,
   children,
   className,
   ...props
@@ -29,7 +31,8 @@ export function Panel({
   return (
     <div
       className={cn(
-        "bg-surface rounded-xl border border-border shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden",
+        "bg-surface rounded-xl border border-border shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-fast ease-soft",
+        interactive && "card-interactive cursor-pointer border-2 hover:border-brand-800 hover:-translate-y-1 hover:shadow-interactive",
         className
       )}
       {...props}

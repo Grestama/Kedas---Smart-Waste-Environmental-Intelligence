@@ -65,7 +65,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 : undefined
             }
             className={cn(
-              "w-full h-10 px-3.5 text-sm rounded-lg bg-surface text-text-primary border transition-colors",
+              "w-full h-10 px-3.5 text-sm rounded-lg bg-surface text-text-primary border transition-all duration-fast ease-soft",
               "placeholder:text-text-secondary/60 disabled:bg-[#f1f3f1] disabled:cursor-not-allowed",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0] focus-visible:border-[#2f6552]",
               leftAddon ? "pl-10" : "",

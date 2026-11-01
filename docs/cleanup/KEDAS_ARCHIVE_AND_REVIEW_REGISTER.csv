@@ -1,0 +1,8 @@
+Item_Path,Category,Current_State,Protection_Mechanism,Business_Value,Review_Status
+backend/wastelink.db,User Data / Local Database,PRESERVED_ON_DISK,Diabaikan oleh root .gitignore (*.db),Data seed operasional demo Kedas,SAFE_PRESERVED
+uploads/evidence/pickup/*,Operational Evidence Data,PRESERVED_ON_DISK,Diabaikan oleh root .gitignore (uploads/),Bukti foto timbangan fisik transaksi sampah,SAFE_PRESERVED
+PAKET_DOKUMEN_KEDAS_AI_WEB_INNOVATION/*,Core Architecture Docs,PRESERVED_IN_ROOT,Terlacak dalam repositori,Dokumen resmi PRD/SRS/HDD/Design System Kedas AI,SAFE_PRESERVED
+docs/Contoh_UI/*.jpg,Design Assets (Historis),PRESERVED_IN_DOCS,Terlacak dalam direktori docs/,Mockup visual referensi prototype awal,SAFE_PRESERVED
+mobile/src/lib/offline-draft.ts,Active Mobile Source,PRESERVED_IN_SRC,Terlacak dalam subproyek mobile/,Modul antrean draft setoran offline warga Sukawati,SAFE_PRESERVED
+frontend/public/images/hero-cleanup.jpg,Active Public Asset,PRESERVED_IN_PUBLIC,Terlacak dalam frontend/public/,Scenery background hero Public Main Website,SAFE_PRESERVED
+frontend/public/images/mosaic-*.jpg,Active Public Asset,PRESERVED_IN_PUBLIC,Terlacak dalam frontend/public/,Foto pendukung komitmen kawasan Public Main,SAFE_PRESERVED

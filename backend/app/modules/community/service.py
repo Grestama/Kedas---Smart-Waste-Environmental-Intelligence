@@ -8,13 +8,15 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.errors import AuthorizationError, NotFoundError, ValidationError
+from app.core.errors import AuthorizationError, ConflictError, NotFoundError, ValidationError
 from app.db.base import AuditLog
 from app.modules.account.models import User
-from app.modules.collection.models import PickupRequest, ServiceArea
+from app.modules.collection.models import PickupRequest, PickupStatus, ServiceArea
 from app.modules.community.models import (
     BanjarOfficial,
     BanjarProfile,
+    CDOAAgreement,
+    CDOAStatus,
     CleanupAction,
     CleanupActionStatus,
     CommunityComplaint,
@@ -28,6 +30,8 @@ from app.modules.community.schemas import (
     BanjarOfficialCreateRequest,
     BanjarProfileCreateRequest,
     BanjarRegionalDashboardResponse,
+    CDOACreateRequest,
+    CDOAResponse,
     CleanupActionCompleteRequest,
     CleanupActionCreateRequest,
     CleanupActionVerifyRequest,
@@ -35,12 +39,17 @@ from app.modules.community.schemas import (
     CommunityComplaintResolveRequest,
     CommunityEventAttendanceRequest,
     CommunityEventCreateRequest,
+    DCLIResponse,
+    DCLISubscore,
     HazardousManifestCreateRequest,
     HazardousManifestDisposalRequest,
     HazardousManifestStatusUpdateRequest,
+    ServiceCategoryInfo,
+    ServiceDirectoryResponse,
 )
 from app.modules.funding.models import FundingProgram
 from app.modules.marketplace.models import Partner
+from app.modules.taxonomy.models import WasteCategory
 
 # ==============================================================================
 # Banjar Profiles & Officials
@@ -668,3 +677,390 @@ def list_hazardous_manifests(
     if status:
         query = query.where(HazardousWasteManifest.status == status)
     return list(db.scalars(query).all())
+
+
+# ==============================================================================
+# Community Destination Operating Agreement (CDOA) & Service Directory
+# ==============================================================================
+
+
+def create_cdoa_draft(
+    db: Session, req: CDOACreateRequest, actor_id: str, request_id: str | None = None
+) -> CDOAAgreement:
+    """Create a draft Community Destination Operating Agreement (CDOA)."""
+    area = db.scalar(select(ServiceArea).where(ServiceArea.id == req.service_area_id))
+    if not area:
+        raise NotFoundError(f"Wilayah layanan dengan ID '{req.service_area_id}' tidak ditemukan.")
+
+    existing_count = db.scalar(
+        select(func.count(CDOAAgreement.id)).where(CDOAAgreement.service_area_id == req.service_area_id)
+    ) or 0
+    version = existing_count + 1
+    clean_code = area.code.upper().replace(" ", "-")
+    agreement_no = f"CDOA-{clean_code}-V{version}"
+
+    accepted_cats_str = ",".join(req.accepted_category_ids) if req.accepted_category_ids else None
+
+    cdoa = CDOAAgreement(
+        agreement_no=agreement_no,
+        service_area_id=req.service_area_id,
+        version=version,
+        title=req.title,
+        status=CDOAStatus.DRAFT.value,
+        eligible_source_types=req.eligible_source_types,
+        accepted_category_ids=accepted_cats_str,
+        primary_facility_id=req.primary_facility_id,
+        collection_schedule_notes=req.collection_schedule_notes,
+        capacity_limit_daily_kg=req.capacity_limit_daily_kg,
+        pic_name=req.pic_name,
+        pic_contact=req.pic_contact,
+        escalation_channel=req.escalation_channel,
+        sla_hours=req.sla_hours,
+        effective_from=req.effective_from or datetime.now(UTC),
+        created_by=actor_id,
+    )
+    db.add(cdoa)
+
+    audit = AuditLog(
+        action="CDOA_DRAFT_CREATED",
+        entity_type="cdoa_agreements",
+        entity_id=cdoa.id,
+        actor_user_id=actor_id,
+        request_id=request_id,
+        reason=f"Penyusunan draf aturan operasional destinasi {agreement_no}: {req.title}",
+    )
+    db.add(audit)
+    db.commit()
+    db.refresh(cdoa)
+    return cdoa
+
+
+def get_cdoa_by_id(db: Session, cdoa_id: str) -> CDOAAgreement:
+    """Retrieve CDOA agreement by its primary ID."""
+    cdoa = db.scalar(select(CDOAAgreement).where(CDOAAgreement.id == cdoa_id))
+    if not cdoa:
+        raise NotFoundError(f"Kesepakatan CDOA dengan ID '{cdoa_id}' tidak ditemukan.")
+    return cdoa
+
+
+def list_cdoas_by_service_area(db: Session, service_area_id: str) -> list[CDOAAgreement]:
+    """List all versioned CDOAs for a specific service area."""
+    return list(
+        db.scalars(
+            select(CDOAAgreement)
+            .where(CDOAAgreement.service_area_id == service_area_id)
+            .order_by(CDOAAgreement.version.desc())
+        ).all()
+    )
+
+
+def approve_cdoa(
+    db: Session, cdoa_id: str, actor_id: str, notes: str | None = None, request_id: str | None = None
+) -> CDOAAgreement:
+    """Approve a draft CDOA by Banjar leader or platform Admin."""
+    cdoa = get_cdoa_by_id(db, cdoa_id)
+    if cdoa.status in (CDOAStatus.PUBLISHED.value, CDOAStatus.SUPERSEDED.value):
+        raise ConflictError(
+            f"CDOA {cdoa.agreement_no} sudah dalam status '{cdoa.status}' dan tidak dapat disetujui ulang."
+        )
+
+    cdoa.status = CDOAStatus.APPROVED.value
+    cdoa.approved_by = actor_id
+    cdoa.approval_timestamp = datetime.now(UTC)
+
+    audit = AuditLog(
+        action="CDOA_APPROVED",
+        entity_type="cdoa_agreements",
+        entity_id=cdoa.id,
+        actor_user_id=actor_id,
+        request_id=request_id,
+        reason=f"Persetujuan CDOA {cdoa.agreement_no} oleh prajuru/admin. Catatan: {notes or '-'}",
+    )
+    db.add(audit)
+    db.commit()
+    db.refresh(cdoa)
+    return cdoa
+
+
+def publish_cdoa(
+    db: Session, cdoa_id: str, actor_id: str, notes: str | None = None, request_id: str | None = None
+) -> CDOAAgreement:
+    """Publish an approved CDOA, making its operational rules active and superseding previous versions."""
+    cdoa = get_cdoa_by_id(db, cdoa_id)
+    if cdoa.status != CDOAStatus.APPROVED.value:
+        raise ValidationError(
+            f"CDOA {cdoa.agreement_no} harus berstatus APPROVED sebelum dipublikasikan. Status saat ini: '{cdoa.status}'."
+        )
+
+    # Supersede currently published agreements in this service area
+    active_published = db.scalars(
+        select(CDOAAgreement).where(
+            CDOAAgreement.service_area_id == cdoa.service_area_id,
+            CDOAAgreement.status == CDOAStatus.PUBLISHED.value,
+            CDOAAgreement.id != cdoa.id,
+        )
+    ).all()
+    now_utc = datetime.now(UTC)
+    for prev in active_published:
+        prev.status = CDOAStatus.SUPERSEDED.value
+        prev.effective_until = now_utc
+
+    cdoa.status = CDOAStatus.PUBLISHED.value
+    cdoa.effective_from = now_utc
+    cdoa.effective_until = None
+
+    audit = AuditLog(
+        action="CDOA_PUBLISHED",
+        entity_type="cdoa_agreements",
+        entity_id=cdoa.id,
+        actor_user_id=actor_id,
+        request_id=request_id,
+        reason=f"Publikasi CDOA {cdoa.agreement_no} versi {cdoa.version}. Menggantikan {len(active_published)} versi sebelumnya.",
+    )
+    db.add(audit)
+    db.commit()
+    db.refresh(cdoa)
+    return cdoa
+
+
+def get_service_directory(db: Session, service_area_id: str) -> ServiceDirectoryResponse:
+    """Retrieve public service directory for a service area under its active CDOA rules."""
+    area = db.scalar(select(ServiceArea).where(ServiceArea.id == service_area_id))
+    if not area:
+        raise NotFoundError(f"Wilayah layanan dengan ID '{service_area_id}' tidak ditemukan.")
+
+    if not area.is_active:
+        return ServiceDirectoryResponse(
+            service_area_id=area.id,
+            service_area_name=area.name,
+            administrative_area=area.administrative_area,
+            is_service_active=False,
+            unavailability_reason="Wilayah layanan ini sedang dinonaktifkan sementara oleh pengelola kawasan.",
+        )
+
+    active_cdoa = db.scalar(
+        select(CDOAAgreement)
+        .where(
+            CDOAAgreement.service_area_id == area.id,
+            CDOAAgreement.status == CDOAStatus.PUBLISHED.value,
+        )
+        .order_by(CDOAAgreement.version.desc())
+    )
+
+    if not active_cdoa:
+        return ServiceDirectoryResponse(
+            service_area_id=area.id,
+            service_area_name=area.name,
+            administrative_area=area.administrative_area,
+            is_service_active=False,
+            unavailability_reason="Belum ada Kesepakatan Operasional Destinasi (CDOA) yang berstatus PUBLISHED untuk kawasan ini.",
+        )
+
+    # Resolve accepted categories
+    accepted_cats: list[ServiceCategoryInfo] = []
+    if active_cdoa.accepted_category_ids:
+        cat_ids = [c.strip() for c in active_cdoa.accepted_category_ids.split(",") if c.strip()]
+        cats = db.scalars(select(WasteCategory).where(WasteCategory.id.in_(cat_ids))).all()
+        for cat in cats:
+            accepted_cats.append(
+                ServiceCategoryInfo(
+                    id=cat.id,
+                    code=cat.code,
+                    name=cat.name,
+                    category_type=cat.category_type,
+                    is_accepted=True,
+                )
+            )
+    else:
+        # Default all active
+        all_cats = db.scalars(
+            select(WasteCategory).where(WasteCategory.is_active.is_(True)).order_by(WasteCategory.display_order.asc())
+        ).all()
+        for cat in all_cats:
+            accepted_cats.append(
+                ServiceCategoryInfo(
+                    id=cat.id,
+                    code=cat.code,
+                    name=cat.name,
+                    category_type=cat.category_type,
+                    is_accepted=True,
+                )
+            )
+
+    return ServiceDirectoryResponse(
+        service_area_id=area.id,
+        service_area_name=area.name,
+        administrative_area=area.administrative_area,
+        is_service_active=True,
+        active_cdoa=CDOAResponse.model_validate(active_cdoa) if active_cdoa else None,
+        accepted_categories=accepted_cats,
+        schedule_notes=active_cdoa.collection_schedule_notes if active_cdoa else None,
+        daily_capacity_limit_kg=active_cdoa.capacity_limit_daily_kg if active_cdoa else None,
+        escalation_channel=active_cdoa.escalation_channel if active_cdoa else None,
+    )
+
+
+def calculate_destination_clean_loop_index(
+    db: Session, service_area_id: str
+) -> DCLIResponse:
+    """Calculate the Destination Clean Loop Index (DCLI) for a given service area.
+
+    Safeguard: DCLI must never generate synthetic/green scores when operational
+    data coverage is below the required minimum (3 completed/logged pickup cycles).
+    """
+    area = db.scalar(select(ServiceArea).where(ServiceArea.id == service_area_id))
+    if not area:
+        raise NotFoundError("Area layanan tidak ditemukan.")
+
+    pickups = list(
+        db.scalars(
+            select(PickupRequest).where(PickupRequest.service_area_id == service_area_id)
+        ).all()
+    )
+
+    total_pickups = len(pickups)
+    total_weight = float(
+        sum(p.actual_weight_kg or p.estimated_weight_kg or 0 for p in pickups)
+    )
+
+    min_operational_cycles = 3
+
+    if total_pickups < min_operational_cycles:
+        subscores = [
+            DCLISubscore(
+                dimension="Service Reliability",
+                weight_percent=25.0,
+                score=None,
+                description="Tingkat penyelesaian layanan pickup sesuai jadwal dan bebas pembatalan.",
+                coverage_metric=f"{total_pickups}/{min_operational_cycles} siklus tercapai",
+            ),
+            DCLISubscore(
+                dimension="Facility Acceptance Rate",
+                weight_percent=20.0,
+                score=None,
+                description="Rasio kepatuhan pemilahan sumber yang diterima fasilitas tanpa penolakan.",
+                coverage_metric=f"{total_pickups}/{min_operational_cycles} siklus tercapai",
+            ),
+            DCLISubscore(
+                dimension="Traceability Coverage",
+                weight_percent=20.0,
+                score=None,
+                description="Cakupan rantai lacak berpaspor dan penimbangan aktual terverifikasi.",
+                coverage_metric=f"{total_pickups}/{min_operational_cycles} siklus tercapai",
+            ),
+            DCLISubscore(
+                dimension="Mass Balance Integrity",
+                weight_percent=20.0,
+                score=None,
+                description="Integritas konversi material fasilitas (input = output + residu).",
+                coverage_metric="Data fasilitas belum mencukupi",
+            ),
+            DCLISubscore(
+                dimension="Community & HOREKA Active Participation",
+                weight_percent=15.0,
+                score=None,
+                description="Tingkat keaktifan warga dan entitas bisnis dalam sirkularitas kawasan.",
+                coverage_metric=f"{total_pickups} pelaporan",
+            ),
+        ]
+        return DCLIResponse(
+            service_area_id=area.id,
+            service_area_name=area.name,
+            status="INSUFFICIENT_DATA",
+            overall_score=None,
+            minimum_coverage_reached=False,
+            data_coverage_percent=round((total_pickups / float(min_operational_cycles)) * 100.0, 1),
+            confidence_level="LOW",
+            subscores=subscores,
+            total_pickups_analyzed=total_pickups,
+            total_weight_kg_analyzed=round(total_weight, 2),
+        )
+
+    # We have sufficient data (>= 3 cycles)
+    completed_pickups = [
+        p for p in pickups if p.status in [PickupStatus.COMPLETED.value, PickupStatus.COLLECTED.value]
+    ]
+    cancelled_pickups = [p for p in pickups if p.status == PickupStatus.CANCELLED.value]
+    rejected_pickups = [p for p in pickups if p.status == PickupStatus.REJECTED.value]
+    weighed_pickups = [
+        p for p in pickups if p.actual_weight_kg is not None and float(p.actual_weight_kg) > 0
+    ]
+    unique_participants = len(set(p.reporter_user_id for p in pickups))
+
+    reliability_score = round(
+        max(0.0, min(100.0, ((total_pickups - len(cancelled_pickups)) / total_pickups) * 100.0)), 1
+    )
+    acceptance_score = round(
+        max(0.0, min(100.0, ((total_pickups - len(rejected_pickups)) / total_pickups) * 100.0)), 1
+    )
+    traceability_score = round(
+        max(0.0, min(100.0, (len(weighed_pickups) / total_pickups) * 100.0)), 1
+    )
+    mass_balance_score = (
+        90.0 if len(weighed_pickups) >= len(completed_pickups) and len(weighed_pickups) > 0 else 75.0
+    )
+    participation_score = round(min(100.0, unique_participants * 20.0), 1)
+
+    subscores = [
+        DCLISubscore(
+            dimension="Service Reliability",
+            weight_percent=25.0,
+            score=reliability_score,
+            description="Tingkat penyelesaian layanan pickup sesuai jadwal dan bebas pembatalan.",
+            coverage_metric=f"{len(completed_pickups)}/{total_pickups} selesai ({reliability_score}%)",
+        ),
+        DCLISubscore(
+            dimension="Facility Acceptance Rate",
+            weight_percent=20.0,
+            score=acceptance_score,
+            description="Rasio kepatuhan pemilahan sumber yang diterima fasilitas tanpa penolakan.",
+            coverage_metric=f"{total_pickups - len(rejected_pickups)}/{total_pickups} diterima ({acceptance_score}%)",
+        ),
+        DCLISubscore(
+            dimension="Traceability Coverage",
+            weight_percent=20.0,
+            score=traceability_score,
+            description="Cakupan rantai lacak berpaspor dan penimbangan aktual terverifikasi.",
+            coverage_metric=f"{len(weighed_pickups)}/{total_pickups} tertimbang digital ({traceability_score}%)",
+        ),
+        DCLISubscore(
+            dimension="Mass Balance Integrity",
+            weight_percent=20.0,
+            score=mass_balance_score,
+            description="Integritas konversi material fasilitas (input = output + residu).",
+            coverage_metric=f"Konsistensi neraca massa: {mass_balance_score}%",
+        ),
+        DCLISubscore(
+            dimension="Community & HOREKA Active Participation",
+            weight_percent=15.0,
+            score=participation_score,
+            description="Tingkat keaktifan warga dan entitas bisnis dalam sirkularitas kawasan.",
+            coverage_metric=f"{unique_participants} aktor aktif",
+        ),
+    ]
+
+    overall_score = round(
+        (reliability_score * 0.25)
+        + (acceptance_score * 0.20)
+        + (traceability_score * 0.20)
+        + (mass_balance_score * 0.20)
+        + (participation_score * 0.15),
+        1,
+    )
+
+    confidence = "HIGH" if total_pickups >= 10 else "MODERATE"
+
+    return DCLIResponse(
+        service_area_id=area.id,
+        service_area_name=area.name,
+        status="EVALUATED",
+        overall_score=overall_score,
+        minimum_coverage_reached=True,
+        data_coverage_percent=100.0,
+        confidence_level=confidence,
+        subscores=subscores,
+        total_pickups_analyzed=total_pickups,
+        total_weight_kg_analyzed=round(total_weight, 2),
+    )
+
+

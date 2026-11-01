@@ -9,10 +9,13 @@ import {
   colors,
 } from "../tokens";
 import { Button } from "../components/ui/Button";
+import { IconButton } from "../components/ui/IconButton";
+import { IconContainer } from "../components/ui/IconContainer";
 import { StatusBadge, getStatusBadgeConfig } from "../components/ui/StatusBadge";
 import { Panel } from "../components/ui/Panel";
 import { StatCard } from "../components/ui/StatCard";
 import { EmptyState } from "../components/ui/EmptyState";
+import { Trash2, Sparkles } from "lucide-react";
 
 describe("Design System Tokens & Formatters", () => {
   it("formats IDR currency correctly", () => {
@@ -117,5 +120,35 @@ describe("UI Components Rendering", () => {
     expect(screen.getByText("Belum Ada Data")).toBeDefined();
     expect(screen.getByText("Silakan buat setoran baru.")).toBeDefined();
     expect(screen.getByRole("button", { name: "Buat Setoran" })).toBeDefined();
+  });
+
+  it("applies tactile micro-interaction active scale to Button", () => {
+    render(<Button>Aksi Cepat</Button>);
+    const btn = screen.getByRole("button", { name: "Aksi Cepat" });
+    expect(btn.className).toContain("active:scale-[0.98]");
+  });
+
+  it("renders IconButton with accessible aria-label and hit target", () => {
+    render(
+      <IconButton
+        icon={<Trash2 className="w-4 h-4" />}
+        aria-label="Hapus item draf"
+        variant="ghost"
+      />
+    );
+    const btn = screen.getByRole("button", { name: "Hapus item draf" });
+    expect(btn).toBeDefined();
+    expect(btn.getAttribute("aria-label")).toBe("Hapus item draf");
+    expect(btn.className).toContain("min-w-[40px]");
+  });
+
+  it("renders IconContainer with soft variant style", () => {
+    const { container } = render(
+      <IconContainer variant="soft">
+        <Sparkles className="w-4 h-4" />
+      </IconContainer>
+    );
+    const iconWrapper = container.firstChild as HTMLElement;
+    expect(iconWrapper.className).toContain("bg-[#E8F0E9]");
   });
 });

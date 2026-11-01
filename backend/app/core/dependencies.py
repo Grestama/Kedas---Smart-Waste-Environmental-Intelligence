@@ -92,6 +92,32 @@ async def get_current_user(
     return user
 
 
+async def get_optional_current_user(
+    request: Request,
+    db: Annotated[Session, Depends(get_db_session)],
+) -> User | None:
+    """Retrieve User if valid session is present; otherwise returns None for public endpoints."""
+    token = extract_session_token(request)
+    if not token:
+        return None
+
+    token_hash = hash_token(token)
+    stmt = select(AuthSession).where(
+        AuthSession.token_hash == token_hash,
+        AuthSession.revoked_at.is_(None),
+        AuthSession.expires_at > datetime.now(UTC),
+    )
+    auth_session = db.scalar(stmt)
+    if not auth_session:
+        return None
+
+    user = db.get(User, auth_session.user_id)
+    if not user or user.account_status != AccountStatus.ACTIVE.value:
+        return None
+
+    return user
+
+
 class RequireRole:
     """Enforce verified RBAC permission at the server level.
 

@@ -20,6 +20,10 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { useToast } from "@/components/ui/Toast";
 import { fetchSummaryReport, exportReportsCsv } from "@/services/admin";
 import { OperationalSummaryReport } from "@/types/admin";
+import { aiService, CopilotResponseData } from "@/services/ai";
+import { OperationRecommendationCard, AIDataProvenance } from "@/components/ai";
+import { DCLIRadarChart } from "@/components/analytics/DCLIRadarChart";
+import { Sparkles } from "lucide-react";
 
 export default function AdminReportsPage() {
   const { showToast } = useToast();
@@ -32,6 +36,28 @@ export default function AdminReportsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+
+  // Copilot State
+  const [copilotData, setCopilotData] = useState<CopilotResponseData | null>(null);
+  const [copilotLoading, setCopilotLoading] = useState(false);
+  const [activeIntent, setActiveIntent] = useState<
+    "PRIORITIZE_TASKS" | "FIND_ELIGIBLE_FACILITY" | "ANOMALY_SUMMARY"
+  >("PRIORITIZE_TASKS");
+
+  const loadCopilot = async (
+    intent: "PRIORITIZE_TASKS" | "FIND_ELIGIBLE_FACILITY" | "ANOMALY_SUMMARY"
+  ) => {
+    setActiveIntent(intent);
+    setCopilotLoading(true);
+    try {
+      const data = await aiService.queryCopilot({ intent });
+      setCopilotData(data);
+    } catch {
+      // Graceful fallback handled by backend
+    } finally {
+      setCopilotLoading(false);
+    }
+  };
 
   const loadReport = async () => {
     setIsLoading(true);
@@ -50,6 +76,7 @@ export default function AdminReportsPage() {
 
   useEffect(() => {
     loadReport();
+    loadCopilot("PRIORITIZE_TASKS");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -143,6 +170,121 @@ export default function AdminReportsPage() {
         </div>
       </Panel>
 
+      {/* Kedas Operations Copilot Panel */}
+      <Panel className="p-5 bg-gradient-to-br from-white via-indigo-50/20 to-emerald-50/20 border border-indigo-100 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100/60 pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-600 text-white rounded-lg shadow-sm">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-stone-900">
+                  Kedas Operations Copilot
+                </h3>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800">
+                  Read-Only Assistive
+                </span>
+                {copilotData && (
+                  <AIDataProvenance level={copilotData.provenance} />
+                )}
+              </div>
+              <p className="text-xs text-stone-600 mt-0.5">
+                Dukungan keputusan operasional berbasis aturan deterministik kapasitas dan integritas neraca massa.
+              </p>
+            </div>
+          </div>
+
+          {/* Intent Tabs */}
+          <div className="flex items-center gap-1.5 bg-stone-100/80 p-1 rounded-lg self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => loadCopilot("PRIORITIZE_TASKS")}
+              disabled={copilotLoading}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                activeIntent === "PRIORITIZE_TASKS"
+                  ? "bg-white text-indigo-900 shadow-xs"
+                  : "text-stone-600 hover:text-stone-900"
+              }`}
+            >
+              Prioritas Tugas
+            </button>
+            <button
+              type="button"
+              onClick={() => loadCopilot("FIND_ELIGIBLE_FACILITY")}
+              disabled={copilotLoading}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                activeIntent === "FIND_ELIGIBLE_FACILITY"
+                  ? "bg-white text-indigo-900 shadow-xs"
+                  : "text-stone-600 hover:text-stone-900"
+              }`}
+            >
+              Kapasitas Fasilitas
+            </button>
+            <button
+              type="button"
+              onClick={() => loadCopilot("ANOMALY_SUMMARY")}
+              disabled={copilotLoading}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                activeIntent === "ANOMALY_SUMMARY"
+                  ? "bg-white text-indigo-900 shadow-xs"
+                  : "text-stone-600 hover:text-stone-900"
+              }`}
+            >
+              Deteksi Anomali
+            </button>
+          </div>
+        </div>
+
+        {copilotLoading ? (
+          <div className="py-6 flex items-center justify-center gap-2 text-xs text-indigo-700">
+            <RefreshCw className="w-4 h-4 animate-spin" />
+            <span>Copilot sedang mengevaluasi data operasional dan batasan deterministik...</span>
+          </div>
+        ) : copilotData ? (
+          <div className="space-y-4">
+            <div className="p-3.5 bg-white/80 backdrop-blur-xs rounded-lg border border-indigo-100/80 text-xs text-stone-800 leading-relaxed">
+              <p className="font-medium">{copilotData.summary}</p>
+              {copilotData.data_snapshot && (
+                <div className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-stone-100">
+                  {Object.entries(copilotData.data_snapshot).map(([k, v]) => (
+                    <span
+                      key={k}
+                      className="px-2 py-0.5 rounded bg-stone-100 font-mono text-[11px] text-stone-700"
+                    >
+                      {k}: <strong>{String(v)}</strong>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {copilotData.recommendations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {copilotData.recommendations.map((rec) => (
+                  <OperationRecommendationCard
+                    key={rec.id}
+                    recommendation={rec}
+                    onExecute={(id) => {
+                      showToast("info", `Aksi '${id}' dapat dieksekusi melalui modul operasional terkait.`);
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="p-4 bg-emerald-50/50 rounded-lg border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                <span>Tidak ditemukan rekomendasi kritis mendesak untuk fokus operasional ini.</span>
+              </div>
+            )}
+
+            <p className="text-[11px] text-stone-500 italic">
+              {copilotData.disclaimer}
+            </p>
+          </div>
+        ) : null}
+      </Panel>
+
       {/* Content Area */}
       {isLoading ? (
         <div className="space-y-3">
@@ -195,6 +337,9 @@ export default function AdminReportsPage() {
               </div>
             </Panel>
           </div>
+
+          {/* DCLI Radar & Mass-Balance Analytics (GAP-006) */}
+          <DCLIRadarChart />
 
           {/* Breakdown Tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

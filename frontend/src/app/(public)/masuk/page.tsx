@@ -109,7 +109,7 @@ function LoginFormContent() {
             <Recycle className="w-6 h-6 text-emerald-400" />
           </div>
           <h1 className="text-xl font-bold text-brand-900 tracking-tight">
-            Masuk ke WasteLink Bali
+            Masuk ke Kedas
           </h1>
           <p className="text-xs text-text-secondary mt-1">
             Pilih peran akun Anda untuk masuk ke sistem operasional

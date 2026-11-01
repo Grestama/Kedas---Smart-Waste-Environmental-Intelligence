@@ -111,7 +111,7 @@ export default function AdminAuditLogPage() {
           {filteredLogs.map((log) => (
             <Panel
               key={log.id}
-              className="p-4 bg-surface border border-border hover:border-brand-500 transition-colors shadow-xs"
+              className="p-4 bg-surface border border-border hover:border-brand-500 hover:shadow-interactive card-interactive transition-all duration-fast ease-soft"
             >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 <div className="space-y-1 flex-1 min-w-0">

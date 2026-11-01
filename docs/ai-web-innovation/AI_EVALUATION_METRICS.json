@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-10-30T14:59:15Z",
+  "safety": {
+    "injection_defense_rate_pct": 100.0,
+    "pii_redaction_rate_pct": 100.0
+  },
+  "ecoguide": {
+    "grounding_precision_pct": 100.0,
+    "abstention_rate_pct": 100.0,
+    "hallucination_rate_pct": 0.0
+  },
+  "vision": {
+    "classification_fidelity_pct": 100.0,
+    "human_review_enforcement_pct": 100.0
+  },
+  "copilot": {
+    "constraint_adherence_pct": 100.0,
+    "state_mutation_rate_pct": 0.0
+  },
+  "overall_status": "PASSED"
+}

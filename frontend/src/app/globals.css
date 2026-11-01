@@ -3,25 +3,109 @@
 @tailwind utilities;
 
 :root {
-  --color-canvas: #f6f6f1;
-  --color-surface: #ffffff;
-  --color-brand-900: #1d3f35;
-  --color-brand-700: #2f6552;
-  --color-brand-100: #e8f0e9;
-  --color-border: #dce3dd;
-  --color-text-primary: #1e2a25;
-  --color-text-secondary: #5d6b63;
+  --workspace-bar-height: 32px;
+
+  /* Brand Tokens (design_web.md Section 2.2) */
+  --kedas-forest-950: #122620; /* utility bar / deepest text */
+  --kedas-forest-900: #16352D; /* primary brand surface */
+  --kedas-forest-800: #1D3F35; /* primary CTA / headings */
+  --kedas-forest-700: #285747; /* hover / selected */
+  --kedas-leaf-600: #219B72;   /* restrained accent */
+  --kedas-leaf-500: #2DBA87;   /* interactive accent, sparingly */
+
+  /* Neutrals */
+  --kedas-ivory-50: #F6F6F1;   /* page background */
+  --kedas-paper-0: #FFFFFF;    /* nav / cards / form surfaces */
+  --kedas-sage-100: #E8F0E9;   /* pill / subtle section surface */
+  --kedas-sage-200: #D7E4D9;   /* soft borders */
+  --kedas-slate-700: #53645E;  /* body copy */
+  --kedas-slate-600: #64736D;  /* secondary copy */
+  --kedas-slate-400: #9AA7A0;  /* disabled/muted */
+  --kedas-border: #DDE3DD;
+
+  /* Semantic */
+  --kedas-success: #247A55;
+  --kedas-warning: #A96C18;
+  --kedas-danger: #B5473D;
+  --kedas-info: #356F89;
+
+  /* Status surface */
+  --kedas-success-bg: #EAF4ED;
+  --kedas-warning-bg: #FAF1E2;
+  --kedas-danger-bg: #F9ECEA;
+  --kedas-info-bg: #EAF2F6;
+
+  /* Radii Scale */
+  --radius-xs: 6px;
+  --radius-sm: 9px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 26px;
+  --radius-pill: 9999px;
+
+  /* Border Hierarchy */
+  --border-hairline: 1px;
+  --border-default: 1px;
+  --border-emphasis: 1.5px;
+  --border-strong: 2px;
+  --border-feature: 3px;
+
+  /* Elevation & Shadows Scale */
+  --shadow-xs: 0 1px 2px rgba(20, 43, 35, 0.05);
+  --shadow-sm: 0 2px 6px rgba(20, 43, 35, 0.06), 0 1px 2px rgba(20, 43, 35, 0.04);
+  --shadow-md: 0 8px 20px rgba(20, 43, 35, 0.08), 0 2px 6px rgba(20, 43, 35, 0.04);
+  --shadow-lg: 0 16px 36px rgba(20, 43, 35, 0.11), 0 4px 12px rgba(20, 43, 35, 0.05);
+  --shadow-xl: 0 24px 56px rgba(20, 43, 35, 0.14), 0 8px 18px rgba(20, 43, 35, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(67, 134, 109, 0.20);
+  --shadow-nav: 0 1px 0 rgba(18, 38, 32, .08);
+  --shadow-card: 0 8px 24px rgba(18, 38, 32, .06);
+  --shadow-popover: 0 16px 40px rgba(18, 38, 32, .14);
+  --shadow-interactive: 0 8px 24px rgba(20, 48, 39, 0.09);
+  --shadow-interactive-hover: 0 12px 30px rgba(18, 38, 32, 0.12);
+
+  /* Motion System Tokens (design_web.md Section 2.2) */
+  --motion-instant: 100ms;
+  --motion-fast: 160ms;
+  --motion-normal: 220ms;
+  --motion-emphasis: 320ms;
+  --motion-enter: 420ms;
+  --motion-slow: 600ms;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --motion-distance-xs: 2px;
+  --motion-distance-sm: 4px;
+  --motion-distance-md: 8px;
+  --motion-distance-lg: 14px;
+
+  /* Backward Compatibility Aliases */
+  --color-canvas: var(--kedas-ivory-50);
+  --color-surface: var(--kedas-paper-0);
+  --color-brand-900: var(--kedas-forest-800);
+  --color-brand-700: var(--kedas-forest-700);
+  --color-brand-100: var(--kedas-sage-100);
+  --color-border: var(--kedas-border);
+  --color-text-primary: var(--kedas-forest-950);
+  --color-text-secondary: var(--kedas-slate-700);
   --focus-ring: #83b6a0;
 }
 
 @layer base {
+  html {
+    font-size: 90%;
+  }
+
   * {
-    border-color: #dce3dd;
+    border-color: var(--kedas-border);
   }
 
   body {
-    background-color: var(--color-canvas);
-    color: var(--color-text-primary);
+    background-color: var(--kedas-ivory-50);
+    color: var(--kedas-forest-950);
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -35,8 +119,8 @@
 
   /* Field operations high contrast readability */
   h1, h2, h3, h4, h5, h6 {
-    color: var(--color-brand-900);
-    font-weight: 600;
+    color: var(--kedas-forest-950);
+    font-weight: 700;
     letter-spacing: -0.015em;
   }
 }
@@ -55,4 +139,195 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #9ba6a0;
+}
+
+/* Micro-interaction & Motion Design System Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes scaleOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@keyframes slideInBottom {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.97);
+  }
+}
+
+@keyframes subtlePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--motion-normal) var(--ease-enter) forwards;
+}
+
+.animate-fade-out {
+  animation: fadeOut var(--motion-fast) var(--ease-exit) forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--motion-normal) var(--ease-enter) forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight var(--motion-emphasis) var(--ease-enter) forwards;
+}
+
+.animate-slide-in-bottom {
+  animation: slideInBottom var(--motion-emphasis) var(--ease-enter) forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp var(--motion-normal) var(--ease-enter) forwards;
+}
+
+.animate-toast-enter {
+  animation: toastSlideIn var(--motion-normal) var(--ease-enter) forwards;
+}
+
+.animate-toast-exit {
+  animation: toastSlideOut var(--motion-fast) var(--ease-exit) forwards;
+}
+
+.animate-subtle-pulse {
+  animation: subtlePulse 1.8s ease-in-out infinite;
+}
+
+/* Tactile Utility Classes */
+.card-interactive,
+.card-popup,
+.hover-card-popup,
+[class*="hover:-translate-y"][class*="border"] {
+  border-width: 2px !important;
+  transition: transform var(--motion-fast) var(--ease-soft),
+              box-shadow var(--motion-fast) var(--ease-soft),
+              border-color var(--motion-fast) var(--ease-soft);
+}
+.card-interactive:hover,
+.card-popup:hover,
+.hover-card-popup:hover,
+[class*="hover:-translate-y"][class*="border"]:hover {
+  border-width: 2px !important;
+}
+
+.btn-press {
+  transition: transform var(--motion-instant) var(--ease-soft),
+              background-color var(--motion-fast) var(--ease-standard),
+              box-shadow var(--motion-fast) var(--ease-standard);
+}
+.btn-press:active {
+  transform: scale(0.98);
+}
+
+/* Accessibility: Support prefers-reduced-motion for vestibular comfort */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+    transform: none !important;
+  }
 }

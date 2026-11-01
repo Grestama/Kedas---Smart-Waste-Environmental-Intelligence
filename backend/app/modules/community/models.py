@@ -243,3 +243,71 @@ class HazardousWasteManifest(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
     disposed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class CDOAStatus(StrEnum):
+    """Community Destination Operating Agreement lifecycle states."""
+
+    DRAFT = "DRAFT"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    APPROVED = "APPROVED"
+    PUBLISHED = "PUBLISHED"
+    SUPERSEDED = "SUPERSEDED"
+    SUSPENDED = "SUSPENDED"
+
+
+class CDOAAgreement(Base):
+    """Community Destination Operating Agreement (CDOA) configuration entity.
+
+    Versioned destination agreement governing service zones, source eligibility,
+    material categories, operational schedules, capacity constraints, and SLAs.
+    """
+
+    __tablename__ = "cdoa_agreements"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    agreement_no: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    service_area_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("service_areas.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=CDOAStatus.DRAFT.value, index=True
+    )
+    eligible_source_types: Mapped[str] = mapped_column(
+        String(255), nullable=False, default="HOUSEHOLD,HOREKA,COMMUNITY_EVENT"
+    )
+    accepted_category_ids: Mapped[str | None] = mapped_column(Text, nullable=True)
+    primary_facility_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True
+    )
+    collection_schedule_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    capacity_limit_daily_kg: Mapped[float] = mapped_column(Float, nullable=False, default=500.0)
+    pic_name: Mapped[str] = mapped_column(String(100), nullable=False, default="Prajuru Banjar")
+    pic_contact: Mapped[str] = mapped_column(String(50), nullable=False, default="08123456789")
+    escalation_channel: Mapped[str] = mapped_column(
+        String(100), nullable=False, default="Kantor Banjar / Balai Desa"
+    )
+    sla_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=24)
+    effective_from: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    effective_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_by: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
+    )
+    approved_by: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    approval_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+

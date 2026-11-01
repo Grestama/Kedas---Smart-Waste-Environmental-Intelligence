@@ -16,9 +16,38 @@ from app.modules.collection.schemas import (
     PickupCreateRequest,
     PickupDetailResponse,
     PickupResponse,
+    ServiceEligibilityCheckRequest,
+    ServiceEligibilityResponse,
+    WastePassportDetailResponse,
+    WastePassportPublicResponse,
 )
 
 router = APIRouter()
+
+
+@router.get(
+    "/passport/public/{public_code}",
+    response_model=WastePassportPublicResponse,
+    summary="[Publik QR] Akses publik Kedas Waste Passport tanpa mewajibkan login",
+)
+async def get_public_passport(
+    public_code: str,
+    db: Annotated[Session, Depends(get_db_session)],
+) -> WastePassportPublicResponse:
+    return collection_service.get_waste_passport_public(db, public_code=public_code)
+
+
+@router.post(
+    "/eligibility",
+    response_model=ServiceEligibilityResponse,
+    summary="[Engine] Periksa kelayakan layanan berdasarkan CDOA kawasan, kategori, dan kapasitas",
+)
+async def check_eligibility(
+    req: ServiceEligibilityCheckRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ServiceEligibilityResponse:
+    return collection_service.check_service_eligibility(db, user=current_user, req=req)
 
 
 @router.post(
@@ -83,3 +112,17 @@ async def cancel_pickup(
         db, current_user, id, reason=req.reason, request_id=request_id
     )
     return PickupResponse.model_validate(pickup)
+
+
+@router.get(
+    "/{id}/passport",
+    response_model=WastePassportDetailResponse,
+    summary="Detail digital Kedas Waste Passport untuk pemilik atau petugas terkait",
+)
+async def get_authenticated_passport(
+    id: str,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> WastePassportDetailResponse:
+    return collection_service.get_waste_passport_detail(db, user=current_user, pickup_id=id)
+

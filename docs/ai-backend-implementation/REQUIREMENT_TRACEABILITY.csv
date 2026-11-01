@@ -1,0 +1,25 @@
+req_id,module,capability,requirement_description,code_reference,test_reference,status
+AI-BE-FR-001,ai,AI-01,Provider-neutral adapter contract,"backend/app/modules/ai/adapter.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+AI-BE-FR-002,ai,AI-01,Server-side secret protection without browser exposure,"backend/app/modules/ai/adapter.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+AI-BE-FR-003,ai,AI-01,Interaction metadata tracking (id/latency/provider),"backend/app/modules/ai/models.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+AI-BE-FR-004,ai,AI-01,Model timeout and fallback policy,"backend/app/modules/ai/adapter.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+AI-BE-FR-005,ai,AI-01,Typed schema validation for AI request/response,"backend/app/modules/ai/schemas.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+AI-BE-FR-007,ai,AI-01,Non-AI domain endpoints remain functional during AI outage,"backend/app/main.py",backend/tests/api/test_health.py,VERIFIED
+CTX-FR-001,community,AI-04,Resolve destination scope from server context,"backend/app/modules/community/service.py",backend/tests/api/test_cdoa_and_membership.py,VERIFIED
+CTX-FR-002,community,AI-04,Include CDOA version and validity timestamp,"backend/app/modules/community/models.py",backend/tests/api/test_cdoa_and_membership.py,VERIFIED
+KB-FR-001,ai,AI-05,Register knowledge document with metadata and checksum,"backend/app/modules/ai/knowledge.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+KB-FR-004,ai,AI-05,Document lifecycle states (PUBLISHED/RETIRED/DRAFT),"backend/app/modules/ai/models.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+KB-FR-006,ai,AI-05,Only approved published documents are retrievable,"backend/app/modules/ai/knowledge.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+EG-FR-001,ai,AI-01,EcoGuide destination context and language detection,"backend/app/modules/ai/service.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+EG-FR-005,ai,AI-01,EcoGuide structured answer with citations and status,"backend/app/modules/ai/service.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+EG-FR-008,ai,AI-01,Prompt injection filter and boundary protection,"backend/app/modules/ai/safety.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+VIS-FR-001,ai,AI-02,MIME and byte size validation for image upload,"backend/app/modules/ai/service.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+VIS-FR-003,ai,AI-02,Map visual candidates to active taxonomy,"backend/app/modules/ai/service.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+VIS-FR-005,ai,AI-02,Image does not determine final weight or hazard status,"backend/app/modules/ai/service.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+OC-FR-001,ai,AI-03,Typed read-only tool registry for Copilot,"backend/app/modules/ai/service.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+OC-FR-005,ai,AI-03,ActionProposal lifecycle instead of direct mutation,"backend/app/modules/ai/service.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+OC-FR-007,ai,AI-03,Human approval and permission check before execution,"backend/app/modules/ai/service.py",backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED
+FAC-FR-001,facility,AI-06,Deterministic facility eligibility filter,"backend/app/modules/facility/service.py",backend/tests/api/test_facility_intelligence_and_eligibility.py,VERIFIED
+HOS-FR-001,marketplace,AI-10,Hospitality circular report and diversion rate,"backend/app/modules/marketplace/service.py",backend/tests/api/test_marketplace_and_e2e.py,VERIFIED
+DCLI-FR-001,community,AI-13,Deterministic DCLI formula and snapshot versioning,"backend/app/modules/community/service.py",backend/tests/api/test_dcli_analytics.py,VERIFIED
+CARB-FR-001,marketplace,AI-19,IPCC carbon avoidance factor calculation,"backend/app/modules/marketplace/service.py",backend/tests/api/test_marketplace_and_e2e.py,VERIFIED

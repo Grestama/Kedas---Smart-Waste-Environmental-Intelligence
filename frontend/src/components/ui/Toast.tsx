@@ -111,9 +111,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={toast.id}
-              role="alert"
+              role={toast.type === "error" ? "alert" : "status"}
               className={cn(
-                "pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-lg transition-all animate-in fade-in slide-in-from-bottom-2",
+                "pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-interactive animate-toast-enter transition-all duration-fast ease-soft",
                 borderColors[toast.type]
               )}
             >
@@ -132,7 +132,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => removeToast(toast.id)}
                 aria-label="Tutup notifikasi"
-                className="text-text-secondary hover:text-text-primary p-0.5 rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#83b6a0]"
+                className="text-text-secondary hover:text-text-primary p-1 rounded-md hover:bg-black/5 active:scale-[0.92] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0]"
               >
                 <X className="w-4 h-4" />
               </button>

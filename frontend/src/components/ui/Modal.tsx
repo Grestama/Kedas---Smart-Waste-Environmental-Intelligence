@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { IconButton } from "./IconButton";
 
 export interface ModalProps {
   isOpen: boolean;
@@ -26,23 +27,75 @@ export function Modal({
   className,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      previousActiveElement.current = document.activeElement as HTMLElement;
+      document.body.style.overflow = "hidden";
+
+      // Focus first interactive element or modal container
+      const timer = setTimeout(() => {
+        if (modalRef.current) {
+          const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          if (focusable.length > 0) {
+            focusable[0]?.focus();
+          } else {
+            modalRef.current.focus();
+          }
+        }
+      }, 50);
+
+      return () => clearTimeout(timer);
+    } else {
+      document.body.style.overflow = "unset";
+      if (previousActiveElement.current) {
+        previousActiveElement.current.focus();
+      }
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && isOpen) {
+      if (!isOpen) return;
+
+      if (e.key === "Escape") {
+        e.stopPropagation();
         onClose();
+        return;
+      }
+
+      // Focus trap
+      if (e.key === "Tab" && modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last?.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first?.focus();
+          }
+        }
       }
     }
 
     if (isOpen) {
-      document.body.style.overflow = "hidden";
       window.addEventListener("keydown", handleKeyDown);
-    } else {
-      document.body.style.overflow = "unset";
     }
 
     return () => {
-      document.body.style.overflow = "unset";
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -66,7 +119,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity"
+        className="fixed inset-0 bg-[#122620]/60 backdrop-blur-[2px] transition-opacity animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -74,13 +127,14 @@ export function Modal({
       {/* Modal Card */}
       <div
         ref={modalRef}
+        tabIndex={-1}
         className={cn(
-          "relative w-full bg-surface rounded-xl border border-border shadow-xl z-10 overflow-hidden transform transition-all",
+          "relative w-full bg-surface rounded-2xl border-2 border-border shadow-popover z-10 overflow-hidden transform transition-all animate-scale-in focus:outline-none",
           sizeClasses[size],
           className
         )}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-white">
           <div>
             <h2
               id="modal-title"
@@ -94,14 +148,13 @@ export function Modal({
               </p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
+          <IconButton
+            icon={<X className="w-4 h-4" />}
+            variant="ghost"
+            size="sm"
             aria-label="Tutup modal"
-            className="p-1 rounded-lg text-text-secondary hover:text-text-primary hover:bg-black/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0]"
-          >
-            <X className="w-5 h-5" />
-          </button>
+            onClick={onClose}
+          />
         </div>
 
         <div className="p-6 max-h-[75vh] overflow-y-auto">{children}</div>

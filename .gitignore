@@ -1,21 +1,48 @@
-# Environment variables & secrets
+# ====================================================================
+# Kedas — AI-Powered Community & Green Tourism Monorepo .gitignore
+# ====================================================================
+
+# 1. Environment Variables & Secrets (JANGAN DI-COMMIT)
 .env
 *.env
+.env*.local
 !.env.example
 
-# Python
+# 2. Package Dependencies & Managers
+node_modules/
+/.pnp
+.pnp.js
+
+# 3. Next.js & Frontend Build Outputs
+.next/
+/dist/
+/build/
+*.tsbuildinfo
+
+# 4. Python Bytecode, Caches & Testing
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
 .pytest_cache/
 .coverage
 htmlcov/
 .mypy_cache/
 .ruff_cache/
+coverage.xml
 
-# Uploads
+# 5. Local Runtime Databases (SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# 6. User Operational Uploads (Evidence Photos)
 uploads/
+backend/uploads/
 
-# OS
+# 7. OS & IDE Configuration Files
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

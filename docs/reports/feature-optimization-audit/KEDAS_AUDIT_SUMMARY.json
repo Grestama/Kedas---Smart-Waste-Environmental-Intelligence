@@ -1,0 +1,156 @@
+{
+  "audit_metadata": {
+    "project_name": "Kedas",
+    "historical_name": "WasteLink Bali",
+    "product_direction": "AI-Powered Community & Green Tourism Intelligence Platform",
+    "tagline": "Bergerak Bersama untuk Lingkungan yang Lebih Bersih.",
+    "audit_date": "2026-10-30T15:15:00+08:00",
+    "audit_mode": "Evidence-Based Product, System, UX, AI & Quality Audit",
+    "auditor_verdict": "PRODUCTION READY WITH STRATEGIC ROADMAP"
+  },
+  "repository_baseline": {
+    "orm_models_count": 44,
+    "api_endpoints_count": 116,
+    "web_routes_count": 38,
+    "rbac_roles_supported": 8,
+    "alembic_migrations_applied": 10,
+    "backend_framework": "FastAPI 0.115.0 / Python 3.13.5",
+    "frontend_framework": "Next.js 15.1.7 / React 19.0.0 / TypeScript 5.9.3",
+    "database_engine": "PostgreSQL 16 (SQLite in-memory test harness)"
+  },
+  "test_summary": {
+    "backend_pytest": {
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 53.05,
+      "status": "PASSED"
+    },
+    "frontend_vitest": {
+      "passed": 102,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 11.98,
+      "status": "PASSED"
+    },
+    "mobile_vitest_frozen": {
+      "passed": 15,
+      "failed": 0,
+      "skipped": 0,
+      "duration_seconds": 0.33,
+      "status": "PASSED"
+    },
+    "total_automated_tests": 203,
+    "overall_pass_rate_pct": 100.0,
+    "typescript_typecheck_errors": 0,
+    "nextjs_production_build": "SUCCESS"
+  },
+  "feature_status_counts": {
+    "EV_existing_verified": 16,
+    "EP_existing_partial": 5,
+    "BE_backend_only": 1,
+    "UI_ui_only": 0,
+    "MO_mock_only": 0,
+    "MI_missing": 0,
+    "NV_not_verified": 0,
+    "NA_not_applicable": 1
+  },
+  "domain_maturity": {
+    "destination_and_cdoa": 3.0,
+    "identity_and_rbac": 4.0,
+    "knowledge_and_ecoguide": 4.0,
+    "kedas_vision": 3.0,
+    "operations_copilot": 3.5,
+    "collection_and_staff": 4.0,
+    "metrology_and_points": 4.0,
+    "waste_passport_traceability": 4.0,
+    "facility_intelligence": 3.5,
+    "green_hospitality_ledger": 2.5,
+    "community_ecoloop": 2.5,
+    "analytics_and_dcli": 3.0,
+    "average_maturity_score": 3.42
+  },
+  "ai_capability_status": {
+    "provider_adapter": {
+      "mode": "Dual-Mode (Gemini 2.0 Flash / Resilient Fallback)",
+      "client_secret_leakage": "NONE",
+      "status": "OPERATIONAL"
+    },
+    "prompt_safety": {
+      "injection_defense_rate_pct": 100.0,
+      "pii_redaction_precision_pct": 100.0
+    },
+    "kedas_ecoguide": {
+      "retrieval_method": "Scoped RAG with exact token set intersection",
+      "grounding_precision_pct": 100.0,
+      "out_of_scope_abstention_pct": 100.0,
+      "hallucination_rate_pct": 0.0
+    },
+    "kedas_vision": {
+      "max_upload_size_mb": 5.0,
+      "classification_fidelity_pct": 100.0,
+      "human_review_enforcement_pct": 100.0,
+      "weights_source": "Gemini Vision API (Cloud) / Heuristics (Fallback)"
+    },
+    "operations_copilot": {
+      "whitelisted_tools_count": 3,
+      "read_only_enforcement": "STRICT",
+      "deterministic_bound_adherence_pct": 100.0,
+      "direct_state_mutation_pct": 0.0
+    }
+  },
+  "gap_counts_by_priority": {
+    "P0_critical": 2,
+    "P1_high": 6,
+    "P2_medium": 6,
+    "P3_low": 2,
+    "total_recommendations": 16
+  },
+  "top_recommendations": [
+    {
+      "id": "REC-001",
+      "title": "Dynamic CDOA & Service Area Data Binding",
+      "domain": "Destination & CDOA",
+      "priority": "P0",
+      "feasibility": "QUICK WIN"
+    },
+    {
+      "id": "REC-002",
+      "title": "Pre-filled Action Modal for Operations Copilot",
+      "domain": "Kedas Operations Copilot",
+      "priority": "P1",
+      "feasibility": "MODERATE"
+    },
+    {
+      "id": "REC-003",
+      "title": "Dense Vector Hybrid Search with pgvector for EcoGuide",
+      "domain": "Knowledge Management",
+      "priority": "P1",
+      "feasibility": "MODERATE"
+    },
+    {
+      "id": "REC-004",
+      "title": "Dedicated HOREKA / Green Hospitality Workspace (/hospitality)",
+      "domain": "Green Hospitality",
+      "priority": "P2",
+      "feasibility": "MAJOR"
+    },
+    {
+      "id": "REC-005",
+      "title": "Offline-First ServiceWorker & Queue for Collectors",
+      "domain": "Collection & Metrology",
+      "priority": "P1",
+      "feasibility": "MODERATE"
+    }
+  ],
+  "risk_summary": {
+    "highest_severity_risk": "RISK-001: Contest Eligibility Category Verification (SMA/D1/D2 vs S1)",
+    "operational_dependency_risk": "RISK-003: Rural Cellular Connectivity for Trike Fleet",
+    "open_decisions_count": 5
+  },
+  "limitations": [
+    "No live operational field data (E4) available yet; validation is code, test, and runtime verified (E1-E3).",
+    "Mobile app codebase is preserved and frozen; modern innovation focus is web-first.",
+    "Vision model evaluation relies on simulated benchmarks and Gemini cloud API; local curated image ground-truth dataset is recommended for future sprint."
+  ]
+}

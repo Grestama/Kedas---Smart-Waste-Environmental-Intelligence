@@ -78,7 +78,7 @@ export function DataTable<T>({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse text-sm">
           <thead>
-            <tr className="border-b border-border bg-[#F8F9F8] text-text-secondary text-xs font-semibold uppercase tracking-wider">
+            <tr className="border-b-2 border-border bg-[#F4F6F4] text-brand-900 text-xs font-bold uppercase tracking-wider">
               {columns.map((col) => (
                 <th
                   key={col.key}

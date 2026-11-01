@@ -1,0 +1,81 @@
+{
+  "project_name": "Kedas",
+  "historical_name": "WasteLink Bali",
+  "version": "1.0.0-pilot",
+  "generated_at": "2026-10-30T13:02:00+08:00",
+  "execution_mode": "Autonomous Sequential Implementation",
+  "stages_completed": 10,
+  "total_stages": 10,
+  "status": "COMPLETED",
+  "test_metrics": {
+    "backend_pytest": {
+      "passed": 81,
+      "failed": 0,
+      "total": 81,
+      "pass_rate_percent": 100.0,
+      "execution_seconds": 53.0
+    },
+    "frontend_vitest": {
+      "passed": 95,
+      "failed": 0,
+      "total": 95,
+      "pass_rate_percent": 100.0,
+      "execution_seconds": 8.28
+    },
+    "mobile_vitest": {
+      "passed": 15,
+      "failed": 0,
+      "total": 15,
+      "pass_rate_percent": 100.0,
+      "execution_seconds": 0.29
+    },
+    "total_automated_tests": {
+      "passed": 191,
+      "failed": 0,
+      "total": 191,
+      "pass_rate_percent": 100.0
+    }
+  },
+  "static_analysis": {
+    "backend_ruff": "PASS (0 errors, 0 warnings)",
+    "backend_mypy": "PASS (79 source files clean, 0 errors)",
+    "frontend_tsc": "PASS (0 type errors)",
+    "mobile_tsc": "PASS (0 type errors)"
+  },
+  "schema_scale": {
+    "database_tables": 44,
+    "alembic_migrations": 9,
+    "latest_migration": "0009_cdoa_and_destination_agreements",
+    "api_endpoints": 116,
+    "frontend_routes": 37,
+    "system_roles": 8
+  },
+  "operational_readiness": {
+    "internal_demo": "READY",
+    "hackathon_pitch": "READY",
+    "controlled_field_pilot": "READY_WITH_SUPERVISED_SOP",
+    "unrestricted_production": "DEFERRED_POST_PILOT"
+  },
+  "key_capabilities": [
+    "Community Destination Operating Agreement (CDOA) Lifecycle",
+    "Deterministic Service Eligibility Engine",
+    "Kedas Waste Passport Public QR (Zero PII Leak)",
+    "Green Hospitality Ledger for Tourism Businesses (HOREKA)",
+    "Guest Green Companion Microsite (Bilingual ID/EN)",
+    "Facility Sorting Mass Balance Engine",
+    "Destination Clean Loop Index (DCLI) Anti-Greenwash Guardrails"
+  ],
+  "reports_generated": [
+    "docs/reports/KEDAS_IMPLEMENTATION_COMPLETION_REPORT.md",
+    "docs/reports/KEDAS_AS_BUILT_VS_TARGET_FINAL.md",
+    "docs/reports/KEDAS_FINAL_TEST_RESULTS.md",
+    "docs/reports/KEDAS_SECURITY_AND_DATA_INTEGRITY_REVIEW.md",
+    "docs/reports/KEDAS_PILOT_READINESS_REPORT.md",
+    "docs/reports/KEDAS_FEATURE_CATALOG.md",
+    "docs/reports/KEDAS_OPERATOR_RUNBOOK.md",
+    "docs/reports/KEDAS_HACKATHON_DEMO_GUIDE.md",
+    "docs/reports/KEDAS_OPEN_DECISIONS_AND_FIELD_VALIDATION.md",
+    "docs/reports/KEDAS_RELEASE_NOTES.md",
+    "docs/reports/kedas-implementation-summary.json"
+  ]
+}

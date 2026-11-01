@@ -291,3 +291,10 @@ class B2BOperationalReportResponse(BaseModel):
     cancelled_count: int
     total_estimated_weight_kg: float
     total_actual_weight_kg: float
+    verified_loop_completion_rate: float = 0.0
+    breakdown_by_category: dict[str, float] = Field(default_factory=dict)
+    audit_disclaimer: str = (
+        "Laporan Operasional Green Hospitality Kedas. Disusun berdasarkan rekaman riwayat alur "
+        "material terverifikasi fasilitas (operational audit trail), bukan sertifikasi lingkungan tanpa bukti lapangan."
+    )
+

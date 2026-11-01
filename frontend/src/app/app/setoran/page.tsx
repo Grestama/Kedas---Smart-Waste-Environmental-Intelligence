@@ -148,7 +148,7 @@ export default function UserDepositsPage() {
       />
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Filter status setoran">
         {[
           { id: "all", label: "Semua Setoran" },
           { id: "PENDING_ASSIGNMENT", label: "Diajukan" },
@@ -158,11 +158,13 @@ export default function UserDepositsPage() {
         ].map((tab) => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={filter === tab.id}
             onClick={() => setFilter(tab.id)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all duration-fast ease-soft active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0] cursor-pointer ${
               filter === tab.id
-                ? "bg-brand-900 text-white shadow-sm"
-                : "bg-surface text-text-secondary border border-border hover:bg-[#F3F5F3]"
+                ? "bg-brand-900 text-white shadow-xs"
+                : "bg-surface text-text-secondary border border-border hover:border-brand-800 hover:text-brand-900 hover:bg-[#F3F5F3]"
             }`}
           >
             {tab.label}

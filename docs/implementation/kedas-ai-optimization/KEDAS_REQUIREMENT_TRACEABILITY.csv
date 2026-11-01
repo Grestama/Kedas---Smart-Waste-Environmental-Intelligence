@@ -1,0 +1,27 @@
+Req_ID,Category,Requirement_Description,Gap_ID,Implementation_File,Test_File,Verification_Status
+REQ-CDOA-001,Community & Destination,Dynamic CDOA Destination Directory with live API binding,GAP-001,frontend/src/app/(public)/area-layanan/page.tsx,frontend/src/test/service-area.test.tsx,VERIFIED_PASSED
+REQ-CDOA-002,Community & Destination,Destination Isolation & Scoped SLA Operating Rules,GAP-001,backend/app/api/v1/community.py,backend/tests/api/test_cdoa_and_membership.py,VERIFIED_PASSED
+REQ-COPILOT-001,AI Intelligence,Deterministic Copilot Recommendations with typed action proposals,GAP-002,backend/app/modules/ai/service.py,backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED_PASSED
+REQ-COPILOT-002,AI Intelligence,Action proposal modal with human review and parameter adjustment,GAP-002,frontend/src/components/ai/ActionProposalModal.tsx,frontend/src/test/ai-components.test.tsx,VERIFIED_PASSED
+REQ-COPILOT-003,AI Intelligence,Copilot state execution with audited transactional diffs,GAP-002,backend/app/api/v1/ai.py,backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED_PASSED
+REQ-RAG-001,RAG Knowledge,Hybrid retrieval combining lexical overlap with domain keyword scoring,GAP-003,backend/app/modules/ai/knowledge.py,backend/app/cli/evaluate_ai.py,VERIFIED_PASSED
+REQ-RAG-002,RAG Knowledge,Destination isolation boost in retrieval ranking,GAP-003,backend/app/modules/ai/knowledge.py,backend/app/cli/evaluate_ai.py,VERIFIED_PASSED
+REQ-HOSP-001,Green Hospitality,Green Hospitality HOREKA dedicated workspace,GAP-004,frontend/src/app/hospitality/layout.tsx,frontend/src/test/hospitality.test.tsx,VERIFIED_PASSED
+REQ-HOSP-002,Green Hospitality,Hospitality operational dashboard with diversion rate and CDOA quota,GAP-004,frontend/src/app/hospitality/page.tsx,frontend/src/test/hospitality.test.tsx,VERIFIED_PASSED
+REQ-HOSP-003,Green Hospitality,Shift-based waste generation intake with AI vision verification,GAP-004,frontend/src/app/hospitality/setoran/page.tsx,frontend/src/test/hospitality.test.tsx,VERIFIED_PASSED
+REQ-HOSP-004,Green Hospitality,Green Tourism ESG compliance report with verified audit trail,GAP-004,frontend/src/app/hospitality/esg/page.tsx,frontend/src/test/hospitality.test.tsx,VERIFIED_PASSED
+REQ-HOSP-005,Green Hospitality,Multilingual resort guest companion with printable QR cards,GAP-004,frontend/src/app/hospitality/guest-companion/page.tsx,frontend/src/test/hospitality.test.tsx,VERIFIED_PASSED
+REQ-HOSP-006,Green Hospitality,Community EcoLoop incident reporting for tourist corridors,GAP-004,frontend/src/app/hospitality/lapor/page.tsx,frontend/src/test/hospitality.test.tsx,VERIFIED_PASSED
+REQ-OFFLINE-001,Operations & Reliability,Scoped offline weighing outbox queue for remote TPS3R,GAP-005,frontend/src/lib/offline-queue.ts,frontend/src/test/staff.test.tsx,VERIFIED_PASSED
+REQ-OFFLINE-002,Operations & Reliability,Visual offline banner with automatic reconnect replay,GAP-005,frontend/src/components/staff/OfflineOutboxBanner.tsx,frontend/src/test/staff.test.tsx,VERIFIED_PASSED
+REQ-DCLI-001,Analytics & Traceability,Destination Clean Loop Index (DCLI) 5-dimensional radar chart,GAP-006,frontend/src/components/analytics/DCLIRadarChart.tsx,frontend/src/test/admin.test.tsx,VERIFIED_PASSED
+REQ-DCLI-002,Analytics & Traceability,Mass-balance reconciliation audit with 5-stream decomposition,GAP-006,frontend/src/components/analytics/DCLIRadarChart.tsx,frontend/src/test/admin.test.tsx,VERIFIED_PASSED
+REQ-DCLI-003,Analytics & Traceability,Standard IPCC / KLHK carbon avoidance methodology disclaimer,GAP-006,frontend/src/components/analytics/DCLIRadarChart.tsx,frontend/src/test/admin.test.tsx,VERIFIED_PASSED
+REQ-KNOW-001,Knowledge Administration,Admin knowledge management UI with real-time chunk estimator,GAP-007,frontend/src/app/admin/pengetahuan/page.tsx,frontend/src/test/knowledge-admin.test.tsx,VERIFIED_PASSED
+REQ-KNOW-002,Knowledge Administration,Knowledge CRUD endpoints and lifecycle status management,GAP-007,backend/app/api/v1/ai.py,frontend/src/test/knowledge-admin.test.tsx,VERIFIED_PASSED
+REQ-KNOW-003,Knowledge Administration,SHA-256 provenance inspector and document governance,GAP-007,frontend/src/app/admin/pengetahuan/page.tsx,frontend/src/test/knowledge-admin.test.tsx,VERIFIED_PASSED
+REQ-ECO-001,AI Assistant,Bilingual support (ID/EN) for citizen guidance,None,backend/app/modules/ai/service.py,backend/app/cli/evaluate_ai.py,VERIFIED_PASSED
+REQ-ECO-002,AI Assistant,Context disambiguation when destination is unspecified,None,backend/app/modules/ai/service.py,backend/app/cli/evaluate_ai.py,VERIFIED_PASSED
+REQ-ECO-003,AI Assistant,User feedback recording endpoint and interaction telemetry,None,backend/app/api/v1/ai.py,frontend/src/test/ai-components.test.tsx,VERIFIED_PASSED
+REQ-VIS-001,Computer Vision,Client-side image metadata stripping (EXIF/GPS) for privacy,None,backend/app/modules/ai/service.py,backend/tests/api/test_ai_foundation_and_ecoguide.py,VERIFIED_PASSED
+REQ-VIS-002,Computer Vision,Confidence-band gating and destination acceptance check,None,backend/app/modules/ai/service.py,backend/app/cli/evaluate_ai.py,VERIFIED_PASSED

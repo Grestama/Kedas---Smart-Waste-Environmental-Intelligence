@@ -18,6 +18,7 @@ import {
   History,
   Shield,
   LogOut,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/components/ui/Toast";
@@ -102,6 +103,11 @@ export function AdminSidebar() {
           icon: <FileBarChart2 className="w-4 h-4" />,
         },
         {
+          href: "/admin/pengetahuan",
+          label: "Basis SOP & Regulasi (RAG)",
+          icon: <BookOpen className="w-4 h-4" />,
+        },
+        {
           href: "/admin/audit-log",
           label: "Audit Log Sistem",
           icon: <History className="w-4 h-4" />,
@@ -120,16 +126,16 @@ export function AdminSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-[#14231E] text-white/90 border-r border-[#0E1A16] flex flex-col shrink-0 min-h-screen">
+    <aside className="w-64 bg-[#122620] text-white/90 border-r border-[#1D3F35] flex flex-col shrink-0 h-full overflow-y-auto">
       {/* Brand Header */}
       <div className="p-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white">
-            <Shield className="w-4 h-4" />
+          <div className="w-9 h-9 rounded-xl bg-[#1D3F35] border border-emerald-500/30 flex items-center justify-center text-emerald-300 shadow-xs">
+            <Shield className="w-4 h-4 text-emerald-400" />
           </div>
           <div>
             <span className="text-sm font-bold text-white block leading-tight">
-              WasteLink Admin
+              Kedas Admin
             </span>
             <span className="text-[10px] text-emerald-400 block mt-0.5">
               Konsol Koordinator Banjar
@@ -157,14 +163,14 @@ export function AdminSidebar() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors",
+                      "flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-150",
                       isActive
-                        ? "bg-emerald-600/90 text-white font-semibold"
-                        : "text-white/70 hover:text-white hover:bg-white/5"
+                        ? "bg-[#1D3F35] text-white font-semibold shadow-xs border-l-4 border-emerald-400 pl-2.5"
+                        : "text-white/75 hover:text-white hover:bg-white/[0.06]"
                     )}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className={isActive ? "text-white" : "text-white/60"}>
+                      <span className={isActive ? "text-emerald-300" : "text-white/60"}>
                         {item.icon}
                       </span>
                       <span>{item.label}</span>
@@ -172,10 +178,10 @@ export function AdminSidebar() {
                     {item.badge && (
                       <span
                         className={cn(
-                          "px-1.5 py-0.5 rounded text-[10px] font-bold font-mono",
+                          "px-2 py-0.5 rounded-full text-[10px] font-bold font-mono",
                           isActive
-                            ? "bg-white text-emerald-900"
-                            : "bg-white/10 text-emerald-300"
+                            ? "bg-emerald-400 text-[#122620]"
+                            : "bg-emerald-500/20 text-emerald-300 border border-emerald-400/20"
                         )}
                       >
                         {item.badge}
@@ -220,7 +226,7 @@ export function AdminSidebar() {
 
 export function AdminHeader() {
   return (
-    <header className="h-16 bg-surface border-b border-border px-6 flex items-center justify-between sticky top-8 z-30">
+    <header className="h-14 bg-surface/95 backdrop-blur-sm border-b border-border px-6 flex items-center justify-between sticky top-[var(--workspace-bar-height)] z-30 shadow-xs">
       <div className="flex items-center gap-3">
         <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200">
           Supervisi Banjar Pilot Sukawati

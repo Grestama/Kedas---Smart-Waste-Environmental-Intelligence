@@ -273,4 +273,7 @@ export interface B2BOperationalReport {
   cancelled_count: number;
   total_estimated_weight_kg: number;
   total_actual_weight_kg: number;
+  verified_loop_completion_rate?: number;
+  breakdown_by_category?: Record<string, number>;
+  audit_disclaimer?: string;
 }

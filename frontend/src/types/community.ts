@@ -318,3 +318,62 @@ export interface BudgetAllocationCreateRequest {
   allocated_amount_idr: number;
   purpose: string;
 }
+
+// ==============================================================================
+// CDOA & Service Directory (Tata Kelola Destinasi & Area Layanan)
+// ==============================================================================
+
+export enum CDOAStatus {
+  DRAFT = "DRAFT",
+  REVIEWED = "REVIEWED",
+  APPROVED = "APPROVED",
+  PUBLISHED = "PUBLISHED",
+  ARCHIVED = "ARCHIVED",
+}
+
+export interface CDOAResponse {
+  id: string;
+  agreement_no: string;
+  service_area_id: string;
+  version: number;
+  title: string;
+  status: CDOAStatus | string;
+  eligible_source_types: string;
+  accepted_category_ids?: string | null;
+  primary_facility_id?: string | null;
+  collection_schedule_notes?: string | null;
+  capacity_limit_daily_kg: number;
+  pic_name: string;
+  pic_contact: string;
+  escalation_channel: string;
+  sla_hours: number;
+  effective_from: string;
+  effective_until?: string | null;
+  created_by: string;
+  approved_by?: string | null;
+  approval_timestamp?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ServiceCategoryInfo {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  handling_notes?: string | null;
+}
+
+export interface ServiceDirectoryResponse {
+  service_area_id: string;
+  service_area_name: string;
+  administrative_area: string;
+  is_service_active: boolean;
+  active_cdoa?: CDOAResponse | null;
+  accepted_categories: ServiceCategoryInfo[];
+  schedule_notes?: string | null;
+  daily_capacity_limit_kg?: number | null;
+  escalation_channel?: string | null;
+  unavailability_reason?: string | null;
+}
+

@@ -100,7 +100,12 @@ def create_facility_receipt(
     request_id: str | None = None,
 ) -> FacilityReceipt:
     """Record an intake receipt at facility workstation with mass discrepancy audit."""
-    facility = get_facility(db, req.facility_id)
+    # Acquire row-level lock on facility to serialize intake receipt transactions
+    facility = db.scalar(
+        select(Facility).where(Facility.id == req.facility_id).with_for_update()
+    )
+    if not facility:
+        raise NotFoundError(f"Fasilitas dengan ID '{req.facility_id}' tidak ditemukan.")
     if not facility.is_active:
         raise ValidationError(f"Fasilitas '{facility.name}' sedang non-aktif.")
 
@@ -259,7 +264,12 @@ def record_sorting_process(
     Input Weight = sum(Output Fractions) + Residue +- Tolerance
     Stock cannot fall below zero.
     """
-    facility = get_facility(db, req.facility_id)
+    # Acquire row-level lock on facility to serialize intake receipt transactions
+    facility = db.scalar(
+        select(Facility).where(Facility.id == req.facility_id).with_for_update()
+    )
+    if not facility:
+        raise NotFoundError(f"Fasilitas dengan ID '{req.facility_id}' tidak ditemukan.")
 
     # 1. Verify available input stock
     current_stock = get_category_stock(db, req.facility_id, req.input_category_id)
@@ -390,7 +400,12 @@ def create_waste_bank_member(
     actor_id: str,
 ) -> WasteBankMember:
     """Register a citizen as an account holder in a local Bank Sampah."""
-    facility = get_facility(db, req.facility_id)
+    # Acquire row-level lock on facility to serialize intake receipt transactions
+    facility = db.scalar(
+        select(Facility).where(Facility.id == req.facility_id).with_for_update()
+    )
+    if not facility:
+        raise NotFoundError(f"Fasilitas dengan ID '{req.facility_id}' tidak ditemukan.")
     user = db.get(User, req.user_id)
     if not user:
         raise NotFoundError("Pengguna tidak ditemukan.")

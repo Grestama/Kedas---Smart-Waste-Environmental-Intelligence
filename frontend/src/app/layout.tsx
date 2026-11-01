@@ -5,9 +5,9 @@ import { AuthProvider } from "@/context/auth-context";
 import { WorkspaceSwitchBar } from "@/components/shells/WorkspaceSwitchBar";
 
 export const metadata: Metadata = {
-  title: "WasteLink Bali — Pengelolaan Sampah Komunitas & Ekonomi Sirkular Desa",
+  title: "Kedas — Bergerak Bersama untuk Lingkungan yang Lebih Bersih",
   description:
-    "Platform pengelolaan sampah berbasis banjar di Bali. Menghubungkan warga desa, petugas TPS3R, dan mitra daur ulang dengan sistem WastePoints.",
+    "Platform digital pengelolaan sampah berbasis komunitas dan ekonomi sirkular di Bali (sebelumnya WasteLink Bali). Menghubungkan warga desa, pos timbang TPS3R, dan mitra daur ulang.",
 };
 
 export default function RootLayout({

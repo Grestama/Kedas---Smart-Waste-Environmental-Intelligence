@@ -1,0 +1,4 @@
+Path,Category,Removal_Date,Reason,Evidence_Summary,Validation_Test,Rollback_Procedure
+node_modules/.vite/vitest/CACHEDIR.TAG,Build Artifact / Cache,2026-11-01,Cache eksekusi vitest root,Root bukan project node independen; tidak ada package.json root,npm test di frontend & mobile pass,Dapat dibuat ulang via vitest
+node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json,Build Artifact / Cache,2026-11-01,Cache hasil test vitest root,Data temporer tidak memiliki referensi runtime,npm test di frontend & mobile pass,Dapat dibuat ulang via vitest
+.coverage,Test Output Binary,2026-11-01,Binary output pytest-cov Python di root,Artefak coverage temporer dapat digenerasi ulang,pytest di backend pass,Dapat dibuat ulang via pytest --cov

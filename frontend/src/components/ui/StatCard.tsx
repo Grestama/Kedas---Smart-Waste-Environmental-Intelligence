@@ -29,10 +29,10 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "p-5 rounded-xl border transition-all duration-150",
+        "p-5 rounded-xl border-2 transition-all duration-fast ease-soft hover:-translate-y-1 hover:shadow-interactive cursor-pointer",
         highlight
-          ? "bg-brand-900 text-white border-brand-900 shadow-sm"
-          : "bg-surface text-text-primary border-border shadow-[0_1px_2px_rgba(0,0,0,0.03)]",
+          ? "bg-brand-900 text-white border-brand-900 shadow-sm hover:border-emerald-400 hover:bg-[#16352d]"
+          : "bg-surface text-text-primary border-border shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-brand-800",
         className
       )}
       {...props}

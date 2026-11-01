@@ -203,7 +203,10 @@ export const collectionService = {
       if (err instanceof ApiError && err.code === "SPECIAL_CATEGORY_BLOCKED") {
         throw err;
       }
-      // If offline/preview mode, create simulated request
+      if (err instanceof ApiError && err.status !== 0) {
+        throw err; // Re-throw real server HTTP error (validation/auth/conflict)
+      }
+      // If offline/preview mode (network unreachable), create simulated request
       const newMockRequest: PickupRequest = {
         id: `REQ-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
         public_code: `WL-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -345,8 +348,11 @@ export const collectionService = {
         reason,
       });
       return res;
-    } catch {
-      // Mock cancellation
+    } catch (err) {
+      if (err instanceof ApiError && err.status !== 0) {
+        throw err; // Re-throw real server rejection (e.g. 409 cannot cancel in-progress pickup)
+      }
+      // Mock cancellation for offline preview mode
       const detail = await this.getPickupRequestDetail(id);
       detail.status = "CANCELLED";
       if (!detail.events) detail.events = [];

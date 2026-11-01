@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { CheckCircle2, Clock, AlertTriangle, XCircle, Info, FileText } from "lucide-react";
 
 export type BadgeVariant = "success" | "warning" | "danger" | "info" | "neutral";
 
@@ -7,6 +8,7 @@ export interface StatusBadgeProps extends React.HTMLAttributes<HTMLSpanElement> 
   status?: string;
   variant?: BadgeVariant;
   dot?: boolean;
+  icon?: boolean | React.ReactNode;
   label?: string;
   size?: "sm" | "md";
 }
@@ -19,6 +21,7 @@ const variantStyles: Record<
     border: string;
     dotColor: string;
     defaultLabel: string;
+    Icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean | "true" | "false" }>;
   }
 > = {
   success: {
@@ -27,6 +30,7 @@ const variantStyles: Record<
     border: "border-[#BCE1C7]",
     dotColor: "bg-[#276749]",
     defaultLabel: "Selesai",
+    Icon: CheckCircle2,
   },
   warning: {
     bg: "bg-[#FFF4D9]",
@@ -34,6 +38,7 @@ const variantStyles: Record<
     border: "border-[#F7E1A0]",
     dotColor: "bg-[#98631C]",
     defaultLabel: "Menunggu",
+    Icon: Clock,
   },
   danger: {
     bg: "bg-[#FBEAE7]",
@@ -41,6 +46,7 @@ const variantStyles: Record<
     border: "border-[#F5C6BF]",
     dotColor: "bg-[#A43F35]",
     defaultLabel: "Dibatalkan",
+    Icon: AlertTriangle,
   },
   info: {
     bg: "bg-[#EAF2F9]",
@@ -48,6 +54,7 @@ const variantStyles: Record<
     border: "border-[#BDD8EF]",
     dotColor: "bg-[#315F86]",
     defaultLabel: "Diajukan",
+    Icon: Info,
   },
   neutral: {
     bg: "bg-[#EFF2F0]",
@@ -55,6 +62,7 @@ const variantStyles: Record<
     border: "border-[#DCE3DD]",
     dotColor: "bg-[#7E8C84]",
     defaultLabel: "Draf",
+    Icon: FileText,
   },
 };
 
@@ -62,6 +70,7 @@ export function StatusBadge({
   status,
   variant = "neutral",
   dot = true,
+  icon,
   label,
   size = "md",
   className,
@@ -72,11 +81,12 @@ export function StatusBadge({
   const activeVariant = autoConfig ? autoConfig.variant : variant;
   const config = variantStyles[activeVariant];
   const content = children || label || (autoConfig ? autoConfig.label : config.defaultLabel);
+  const SemanticIcon = config.Icon;
 
   return (
     <span
       className={cn(
-        "inline-flex items-center font-medium rounded-full border transition-colors",
+        "inline-flex items-center font-medium rounded-full border transition-colors select-none",
         config.bg,
         config.text,
         config.border,
@@ -85,7 +95,13 @@ export function StatusBadge({
       )}
       {...props}
     >
-      {dot && (
+      {icon ? (
+        typeof icon === "boolean" ? (
+          <SemanticIcon className={cn("shrink-0", size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5")} aria-hidden="true" />
+        ) : (
+          icon
+        )
+      ) : dot ? (
         <span
           className={cn(
             "rounded-full shrink-0",
@@ -94,7 +110,7 @@ export function StatusBadge({
           )}
           aria-hidden="true"
         />
-      )}
+      ) : null}
       <span>{content}</span>
     </span>
   );
@@ -118,12 +134,19 @@ export function getStatusBadgeConfig(statusStr: string): {
     case "aktif":
     case "clean":
     case "bersih":
+    case "safely_disposed":
+    case "harvested":
+    case "processed_confirmed":
+    case "resolved":
       return { variant: "success", label: "Selesai" };
 
     case "pending":
     case "pending_assignment":
     case "diajukan":
     case "submitted":
+    case "batched":
+    case "delivered_to_facility":
+    case "weighed":
       return { variant: "info", label: "Diajukan" };
 
     case "accepted":
@@ -137,6 +160,7 @@ export function getStatusBadgeConfig(statusStr: string): {
       return { variant: "info", label: "Terjadwal" };
 
     case "en_route":
+    case "in_transit":
       return { variant: "warning", label: "Menuju Lokasi" };
 
     case "arrived":

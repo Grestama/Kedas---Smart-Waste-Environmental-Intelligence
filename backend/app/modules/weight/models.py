@@ -9,7 +9,7 @@ from uuid import uuid4
 from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db.base import Base
+from app.db.session import Base
 
 
 class WeighingMethod(StrEnum):

@@ -1,17 +1,23 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Coins, Sparkles, History, ShoppingBag, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel } from "@/components/ui/Panel";
 import { StatCard } from "@/components/ui/StatCard";
+import { useAuth } from "@/context/auth-context";
+import { collectionService } from "@/services/collection";
 import { mockUsers } from "@/mocks/previewData";
 import { formatPoints, formatWITA } from "@/tokens";
 
 export default function WastePointsPage() {
-  const user = mockUsers.warga;
+  const { user: authUser } = useAuth();
+  const [balance, setBalance] = useState<number>(mockUsers.warga.pointsBalance);
+  const [ledgerEntries, setLedgerEntries] = useState<any[]>([]);
 
-  const mockLedger = [
+  const defaultMockLedger = [
     {
       id: "LED-0091",
       date: "2026-10-28T09:15:00+08:00",
@@ -38,6 +44,41 @@ export default function WastePointsPage() {
     },
   ];
 
+  useEffect(() => {
+    let isMounted = true;
+    collectionService
+      .getPointsBalance()
+      .then((res) => {
+        if (isMounted && res && typeof res.current_balance === "number") {
+          setBalance(res.current_balance);
+        }
+      })
+      .catch(() => {});
+
+    collectionService
+      .getPointsLedger()
+      .then((res) => {
+        if (isMounted && res && res.length > 0) {
+          const mapped = res.map((entry) => ({
+            id: entry.id?.substring(0, 8) || "LED-TX",
+            date: entry.created_at || new Date().toISOString(),
+            description: entry.reason || "Penerbitan WastePoints Terverifikasi",
+            amount: entry.points_delta || 0,
+            type: entry.points_delta >= 0 ? "credit" : "debit",
+            weight: "Tervalidasi",
+          }));
+          setLedgerEntries(mapped);
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const activeLedger = ledgerEntries.length > 0 ? ledgerEntries : defaultMockLedger;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -52,7 +93,7 @@ export default function WastePointsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard
           label="Total Saldo Tersedia"
-          value={formatPoints(user.pointsBalance)}
+          value={formatPoints(balance)}
           highlight
           icon={<Coins className="w-5 h-5 text-white" />}
           hint="Buku besar diverifikasi sistem banjar"
@@ -72,7 +113,7 @@ export default function WastePointsPage() {
       </div>
 
       {/* Catalog Notice Banner (Per ADR & Backend Gap) */}
-      <div className="p-5 rounded-xl bg-[#FAFBF9] border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-5 rounded-xl bg-[#FAFBF9] border-2 border-border hover:border-brand-800 hover:-translate-y-0.5 hover:shadow-interactive transition-all duration-fast flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-brand-700" />
@@ -97,7 +138,7 @@ export default function WastePointsPage() {
         subtitle="Catatan kronologis penerbitan WastePoints dari hasil timbangan resmi petugas."
       >
         <div className="divide-y divide-border -mx-5 -my-2 text-xs">
-          {mockLedger.map((tx) => (
+          {activeLedger.map((tx) => (
             <div
               key={tx.id}
               className="px-5 py-3.5 flex items-center justify-between hover:bg-[#FAFBF9] transition-colors"

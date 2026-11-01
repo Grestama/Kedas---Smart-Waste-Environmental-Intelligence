@@ -168,11 +168,11 @@ export async function acceptTask(id: string): Promise<CollectorTask> {
     const res = await apiClient.post<PickupRequest>(`/collector/tasks/${id}/accept`);
     return enrichTaskWithMetadata(res);
   } catch (err: unknown) {
-    if (err instanceof ApiError && err.status === 409) {
-      throw err; // Lempar ulang 409 agar UI dapat menampilkan feedback conflict
+    if (err instanceof ApiError && err.status !== 0) {
+      throw err; // Re-throw all server HTTP errors (409 conflict, 403 forbidden, etc.)
     }
 
-    // Mock fallback mutation
+    // Mock fallback mutation for offline preview mode
     const task = mockTasksStore.find((t) => t.id === id || t.public_code === id);
     if (!task) {
       throw new ApiError(404, "Tugas penjemputan tidak ditemukan.", "NOT_FOUND");
@@ -201,8 +201,12 @@ export async function updateTaskStatus(
   try {
     const res = await apiClient.post<PickupRequest>(`/collector/tasks/${id}/status`, payload);
     return enrichTaskWithMetadata(res);
-  } catch {
-    // Mock fallback
+  } catch (err: unknown) {
+    if (err instanceof ApiError && err.status !== 0) {
+      throw err; // Re-throw state machine rejection or missing reason from server
+    }
+
+    // Mock fallback for offline preview mode
     const task = mockTasksStore.find((t) => t.id === id || t.public_code === id);
     if (!task) {
       throw new ApiError(404, "Tugas tidak ditemukan.", "NOT_FOUND");

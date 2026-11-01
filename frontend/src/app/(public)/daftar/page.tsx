@@ -51,7 +51,7 @@ export default function RegisterPage() {
 
       toast.success(
         "Pendaftaran Berhasil",
-        `Selamat datang di WasteLink Bali, ${newUser.full_name}!`
+        `Selamat datang di Kedas, ${newUser.full_name}!`
       );
       router.push("/app");
     } catch (err: unknown) {
@@ -85,7 +85,7 @@ export default function RegisterPage() {
             Pendaftaran Warga Desa
           </h1>
           <p className="text-xs text-text-secondary mt-1">
-            Bergabunglah dalam program pemilahan sampah banjar pilot WasteLink Bali
+            Bergabunglah dalam program pemilahan sampah banjar pilot Kedas
           </p>
         </div>
 

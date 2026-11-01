@@ -147,4 +147,47 @@ describe("NewDepositPage Component Rendering", () => {
     expect(result.status).toBe("PENDING_ASSIGNMENT");
     expect(result.service_mode).toBe("DROP_OFF");
   });
+
+  it("WL-AUD-001: re-throws server ApiError on createPickupRequest when backend rejects with HTTP error", async () => {
+    const { apiClient } = await import("../lib/api-client");
+    const spy = vi.spyOn(apiClient, "post").mockRejectedValueOnce(
+      new ApiError(400, "Slot jadwal sudah penuh.", "SLOT_CAPACITY_EXCEEDED")
+    );
+
+    const cats = await collectionService.getCategories();
+    const validCat = cats.find((c) => c.category_type !== "SPECIAL")!;
+
+    await expect(
+      collectionService.createPickupRequest({
+        category_id: validCat.id,
+        address_id: "addr_default_01",
+        slot_id: "slot_01",
+        estimated_weight_kg: 5.0,
+      })
+    ).rejects.toThrow("Slot jadwal sudah penuh.");
+
+    spy.mockRestore();
+  });
+
+  it("WL-AUD-001: re-throws server ApiError on cancelPickupRequest when backend rejects cancellation", async () => {
+    const { apiClient } = await import("../lib/api-client");
+    const spy = vi.spyOn(apiClient, "post").mockRejectedValueOnce(
+      new ApiError(409, "Setoran dalam status [EN_ROUTE] tidak dapat dibatalkan.", "INVALID_STATE_TRANSITION")
+    );
+
+    await expect(
+      collectionService.cancelPickupRequest("req_123", "Batal jemput")
+    ).rejects.toThrow("tidak dapat dibatalkan");
+
+    spy.mockRestore();
+  });
+
+  it("WL-AUD-005: correctly maps extended domain statuses to badge variants", () => {
+    expect(getStatusBadgeConfig("INSPECTION")).toEqual({ variant: "warning", label: "Inspeksi Kualitas" });
+    expect(getStatusBadgeConfig("WEIGHED")).toEqual({ variant: "info", label: "Diajukan" });
+    expect(getStatusBadgeConfig("SAFELY_DISPOSED")).toEqual({ variant: "success", label: "Selesai" });
+    expect(getStatusBadgeConfig("HARVESTED")).toEqual({ variant: "success", label: "Selesai" });
+    expect(getStatusBadgeConfig("PROCESSED_CONFIRMED")).toEqual({ variant: "success", label: "Selesai" });
+    expect(getStatusBadgeConfig("RESOLVED")).toEqual({ variant: "success", label: "Selesai" });
+  });
 });

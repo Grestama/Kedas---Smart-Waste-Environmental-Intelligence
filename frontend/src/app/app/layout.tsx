@@ -9,9 +9,9 @@ export default function UserAppLayout({
 }) {
   return (
     <AuthGuard allowedRoles={["USER", "ADMIN"]} workspaceName="Warga">
-      <div className="min-h-screen flex bg-canvas">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block shrink-0">
+      <div className="min-h-[calc(100vh-var(--workspace-bar-height))] flex bg-canvas">
+        {/* Desktop Sidebar - Sticky anchored */}
+        <div className="hidden lg:block shrink-0 sticky top-[var(--workspace-bar-height)] h-[calc(100vh-var(--workspace-bar-height))] z-20">
           <UserSidebar />
         </div>
 

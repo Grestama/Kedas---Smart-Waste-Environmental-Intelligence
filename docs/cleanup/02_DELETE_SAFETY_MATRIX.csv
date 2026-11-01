@@ -1,0 +1,16 @@
+Candidate_ID,Path_Or_Pattern,Category,Evidence_Found,Risk_Assessment,Safety_Status,Target_Action
+CAN-01,node_modules/.vite/vitest/,Build Artifact / Cache,Cache vitest terbentuk di root karena root .gitignore tidak memuat node_modules,Sangat Rendah,SAFE_TO_REMOVE,Hapus cache root dan tambahkan node_modules/ ke root .gitignore
+CAN-02,.coverage,Test Coverage Output,Binary output pytest-cov di root. Bukan source of truth,Sangat Rendah,SAFE_TO_REMOVE,Hapus file coverage temporer di root
+CAN-03,.mypy_cache/,Compiler Cache,Cache type checking Python di root & backend. Sudah ter-ignore git,Sangat Rendah,SAFE_TO_REMOVE,Bersihkan cache lokal mypy
+CAN-04,.pytest_cache/,Test Cache,Cache test runner Pytest di root & backend. Sudah ter-ignore git,Sangat Rendah,SAFE_TO_REMOVE,Bersihkan cache lokal pytest
+CAN-05,backend/wastelink.db,User Data / Local Database,Basis data lokal SQLite (~1.07 MB) berisi data demo operasional,Kritis,KEEP,Pertahankan utuh dan tambahkan *.db ke .gitignore
+CAN-06,docs/Contoh_UI/*.jpg,Design Assets (Historis),Tiga file foto UI mockup prototype awal dalam folder dokumentasi,Sedang,KEEP,Pertahankan sebagai artefak dokumentasi historis
+CAN-07,PAKET_DOKUMEN_KEDAS_AI_WEB_INNOVATION/,Core Documentation,Bundel dokumen resmi PRD/SRS/HDD/Design System Kedas AI,Tinggi,KEEP,Pertahankan utuh di root sebagai repositori spesifikasi
+CAN-08,mobile/src/lib/offline-draft.ts,Active Source Code,Modul antrean draf setoran offline mobile warga,Kritis,KEEP,Pertahankan utuh (fitur operasional aktif)
+CAN-09,frontend/public/images/hero-cleanup.jpg,Active Public Asset,Hero scenery background di halaman utama Public Main Website,Kritis,KEEP,Pertahankan utuh (sumber kebenaran visual)
+CAN-10,frontend/public/images/mosaic-1.jpg,Active Public Asset,Asset foto pendukung komitmen kawasan di Public Main,Kritis,KEEP,Pertahankan utuh (sumber kebenaran visual)
+CAN-11,frontend/public/images/mosaic-2.jpg,Active Public Asset,Asset foto pendukung komitmen kawasan di Public Main,Kritis,KEEP,Pertahankan utuh (sumber kebenaran visual)
+CAN-12,uploads/evidence/pickup/*,Operational Evidence Data,Foto timbangan & serah terima fisik setoran sampah,Kritis,KEEP,Pertahankan utuh (data operasional pengguna)
+CAN-13,backend/alembic/versions/*.py,Database Migrations,Migrasi skema database 0001 s.d. 0010 (CDOA & AI knowledge),Kritis,KEEP,Pertahankan utuh (integritas skema data)
+CAN-14,frontend/package.json (All deps),Dependency Manifest,Seluruh 7 paket produksi dan 14 paket dev terbukti digunakan aktif,Tinggi,KEEP,Pertahankan seluruh paket tanpa bulk uninstall
+CAN-15,backend/pyproject.toml (All deps),Dependency Manifest,Seluruh dependensi FastAPI & tooling terbukti aktif,Tinggi,KEEP,Pertahankan seluruh dependensi backend

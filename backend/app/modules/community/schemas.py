@@ -247,3 +247,116 @@ class HazardousManifestResponse(BaseModel):
     created_by: str
     created_at: datetime
     disposed_at: datetime | None = None
+
+
+# ==============================================================================
+# Community Destination Operating Agreement (CDOA) & Service Directory
+# ==============================================================================
+
+
+class CDOACreateRequest(BaseModel):
+    service_area_id: str
+    title: str = Field(min_length=3, max_length=200)
+    eligible_source_types: str = Field(
+        default="HOUSEHOLD,HOREKA,COMMUNITY_EVENT", max_length=255
+    )
+    accepted_category_ids: list[str] = Field(default_factory=list)
+    primary_facility_id: str | None = None
+    collection_schedule_notes: str | None = None
+    capacity_limit_daily_kg: float = Field(default=500.0, ge=10.0)
+    pic_name: str = Field(default="Prajuru Banjar", min_length=2, max_length=100)
+    pic_contact: str = Field(default="08123456789", min_length=5, max_length=50)
+    escalation_channel: str = Field(
+        default="Kantor Banjar / Balai Desa", min_length=2, max_length=100
+    )
+    sla_hours: int = Field(default=24, ge=1, le=168)
+    effective_from: datetime | None = None
+
+
+class CDOAApproveRequest(BaseModel):
+    notes: str | None = None
+
+
+class CDOAPublishRequest(BaseModel):
+    notes: str | None = None
+
+
+class CDOAResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    agreement_no: str
+    service_area_id: str
+    version: int
+    title: str
+    status: str
+    eligible_source_types: str
+    accepted_category_ids: str | None = None
+    primary_facility_id: str | None = None
+    collection_schedule_notes: str | None = None
+    capacity_limit_daily_kg: float
+    pic_name: str
+    pic_contact: str
+    escalation_channel: str
+    sla_hours: int
+    effective_from: datetime
+    effective_until: datetime | None = None
+    created_by: str
+    approved_by: str | None = None
+    approval_timestamp: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ServiceCategoryInfo(BaseModel):
+    id: str
+    code: str
+    name: str
+    category_type: str
+    is_accepted: bool = True
+
+
+class ServiceDirectoryResponse(BaseModel):
+    service_area_id: str
+    service_area_name: str
+    administrative_area: str
+    is_service_active: bool
+    active_cdoa: CDOAResponse | None = None
+    accepted_categories: list[ServiceCategoryInfo] = Field(default_factory=list)
+    schedule_notes: str | None = None
+    daily_capacity_limit_kg: float | None = None
+    escalation_channel: str | None = None
+    unavailability_reason: str | None = None
+
+
+# ==============================================================================
+# Destination Clean Loop Index (DCLI) Experimental Analytics
+# ==============================================================================
+
+
+class DCLISubscore(BaseModel):
+    dimension: str
+    weight_percent: float
+    score: float | None = None
+    description: str
+    coverage_metric: str
+
+
+class DCLIResponse(BaseModel):
+    service_area_id: str
+    service_area_name: str
+    status: str
+    overall_score: float | None = None
+    minimum_coverage_reached: bool
+    data_coverage_percent: float
+    confidence_level: str
+    subscores: list[DCLISubscore] = Field(default_factory=list)
+    total_pickups_analyzed: int
+    total_weight_kg_analyzed: float
+    disclaimer: str = (
+        "Destination Clean Loop Index (DCLI) adalah indikator eksperimental internal berbasis data "
+        "operasional aktual. Indikator ini BUKAN sertifikasi lingkungan formal, audit kepatuhan hukum, "
+        "atau klaim net-zero/carbon neutral."
+    )
+
+

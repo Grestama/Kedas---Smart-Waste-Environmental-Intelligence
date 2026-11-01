@@ -24,7 +24,7 @@ export default function GuidePage() {
         {mockCategories.map((cat) => (
           <div
             key={cat.id}
-            className="p-6 rounded-2xl bg-surface border border-border shadow-sm flex flex-col justify-between"
+            className="p-6 rounded-2xl bg-surface border-2 border-border shadow-sm hover:border-brand-800 hover:-translate-y-1.5 hover:shadow-interactive transition-all duration-fast ease-soft cursor-pointer flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between">
@@ -40,14 +40,14 @@ export default function GuidePage() {
               <p className="text-xs text-text-secondary mt-1">{cat.description}</p>
 
               <div className="mt-6 space-y-3">
-                <div className="p-3 bg-[#E7F4EA] rounded-lg border border-[#BCE1C7] text-xs text-[#276749] flex items-start gap-2">
+                <div className="p-3 bg-[#E7F4EA] rounded-lg border-2 border-[#BCE1C7] text-xs text-[#276749] flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                   <div>
                     <strong>Kondisi yang Diterima:</strong> Bersih, kering, tidak tercampur residu minyak atau tanah pekat.
                   </div>
                 </div>
 
-                <div className="p-3 bg-[#FBEAE7] rounded-lg border border-[#F5C6BF] text-xs text-[#A43F35] flex items-start gap-2">
+                <div className="p-3 bg-[#FBEAE7] rounded-lg border-2 border-[#F5C6BF] text-xs text-[#A43F35] flex items-start gap-2">
                   <XCircle className="w-4 h-4 shrink-0 mt-0.5" />
                   <div>
                     <strong>Penyebab Penolakan / Degradasi:</strong> Mengandung pecahan kaca tajam tanpa pengaman, baterai/B3, atau kontaminasi basah berjamur.
@@ -68,7 +68,7 @@ export default function GuidePage() {
         ))}
       </div>
 
-      <div className="p-6 rounded-2xl bg-[#FFF4D9] border border-[#F7E1A0] flex items-start gap-4">
+      <div className="p-6 rounded-2xl bg-[#FFF4D9] border-2 border-[#F7E1A0] hover:border-[#98631C] hover:-translate-y-1 hover:shadow-interactive transition-all duration-fast ease-soft cursor-pointer flex items-start gap-4">
         <AlertTriangle className="w-6 h-6 text-[#98631C] shrink-0 mt-1" />
         <div className="space-y-1">
           <h3 className="text-base font-bold text-[#98631C]">

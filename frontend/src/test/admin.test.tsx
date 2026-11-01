@@ -233,6 +233,8 @@ describe("Admin Operations & Governance (Tahap 5)", () => {
 
       await waitFor(() => {
         expect(screen.getByText(/Laporan Operasional & Audit Sirkular/i)).toBeInTheDocument();
+        expect(screen.getByText(/Destination Clean Loop Index \(DCLI\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/Rekonsiliasi Neraca Massa/i)).toBeInTheDocument();
       });
     });
   });

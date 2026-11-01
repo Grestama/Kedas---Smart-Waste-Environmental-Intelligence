@@ -17,6 +17,10 @@ from app.modules.community.schemas import (
     BanjarProfileCreateRequest,
     BanjarProfileResponse,
     BanjarRegionalDashboardResponse,
+    CDOAApproveRequest,
+    CDOACreateRequest,
+    CDOAPublishRequest,
+    CDOAResponse,
     CleanupActionCompleteRequest,
     CleanupActionCreateRequest,
     CleanupActionResponse,
@@ -27,10 +31,12 @@ from app.modules.community.schemas import (
     CommunityEventAttendanceRequest,
     CommunityEventCreateRequest,
     CommunityEventResponse,
+    DCLIResponse,
     HazardousManifestCreateRequest,
     HazardousManifestDisposalRequest,
     HazardousManifestResponse,
     HazardousManifestStatusUpdateRequest,
+    ServiceDirectoryResponse,
 )
 
 router = APIRouter(prefix="/community", tags=["Community Banjar & Special Operations"])
@@ -398,3 +404,119 @@ async def record_hazardous_disposal(
         db, manifest_id=id, req=req, actor_id=actor.id, request_id=request_id
     )
     return HazardousManifestResponse.model_validate(manifest)
+
+
+# ==============================================================================
+# Community Destination Operating Agreement (CDOA) & Service Directory
+# ==============================================================================
+
+
+@router.post(
+    "/cdoa",
+    response_model=CDOAResponse,
+    status_code=201,
+    summary="[Admin/Prajuru] Buat draf kesepakatan operasional destinasi (CDOA)",
+)
+async def create_cdoa(
+    req: CDOACreateRequest,
+    request: Request,
+    actor: Annotated[User, Depends(require_banjar_leader)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CDOAResponse:
+    request_id = getattr(request.state, "request_id", None)
+    cdoa = community_service.create_cdoa_draft(
+        db, req=req, actor_id=actor.id, request_id=request_id
+    )
+    return CDOAResponse.model_validate(cdoa)
+
+
+@router.get(
+    "/cdoa/{id}",
+    response_model=CDOAResponse,
+    summary="Lihat detail kesepakatan CDOA",
+)
+async def get_cdoa(
+    id: str,
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CDOAResponse:
+    cdoa = community_service.get_cdoa_by_id(db, cdoa_id=id)
+    return CDOAResponse.model_validate(cdoa)
+
+
+@router.get(
+    "/banjar/{service_area_id}/cdoas",
+    response_model=list[CDOAResponse],
+    summary="Daftar seluruh versi CDOA pada suatu wilayah layanan",
+)
+async def list_cdoas_by_area(
+    service_area_id: str,
+    db: Annotated[Session, Depends(get_db_session)],
+) -> list[CDOAResponse]:
+    cdoas = community_service.list_cdoas_by_service_area(db, service_area_id=service_area_id)
+    return [CDOAResponse.model_validate(c) for c in cdoas]
+
+
+@router.post(
+    "/cdoa/{id}/approve",
+    response_model=CDOAResponse,
+    summary="[Admin/Prajuru] Setujui kesepakatan CDOA setelah peninjauan",
+)
+async def approve_cdoa(
+    id: str,
+    req: CDOAApproveRequest,
+    request: Request,
+    actor: Annotated[User, Depends(require_banjar_leader)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CDOAResponse:
+    request_id = getattr(request.state, "request_id", None)
+    cdoa = community_service.approve_cdoa(
+        db, cdoa_id=id, actor_id=actor.id, notes=req.notes, request_id=request_id
+    )
+    return CDOAResponse.model_validate(cdoa)
+
+
+@router.post(
+    "/cdoa/{id}/publish",
+    response_model=CDOAResponse,
+    summary="[Admin/Prajuru] Publikasikan CDOA agar aturan operasional kawasan aktif",
+)
+async def publish_cdoa(
+    id: str,
+    req: CDOAPublishRequest,
+    request: Request,
+    actor: Annotated[User, Depends(require_banjar_leader)],
+    db: Annotated[Session, Depends(get_db_session)],
+) -> CDOAResponse:
+    request_id = getattr(request.state, "request_id", None)
+    cdoa = community_service.publish_cdoa(
+        db, cdoa_id=id, actor_id=actor.id, notes=req.notes, request_id=request_id
+    )
+    return CDOAResponse.model_validate(cdoa)
+
+
+@router.get(
+    "/service-directory/{service_area_id}",
+    response_model=ServiceDirectoryResponse,
+    summary="[Publik] Direktori aturan layanan kawasan aktif berdasarkan CDOA",
+)
+async def get_service_directory(
+    service_area_id: str,
+    db: Annotated[Session, Depends(get_db_session)],
+) -> ServiceDirectoryResponse:
+    return community_service.get_service_directory(db, service_area_id=service_area_id)
+
+
+@router.get(
+    "/banjar/{service_area_id}/dcli",
+    response_model=DCLIResponse,
+    summary="[Publik/Monitoring] Destination Clean Loop Index (DCLI) Kawasan",
+)
+async def get_destination_clean_loop_index(
+    service_area_id: str,
+    db: Annotated[Session, Depends(get_db_session)],
+) -> DCLIResponse:
+    return community_service.calculate_destination_clean_loop_index(
+        db, service_area_id=service_area_id
+    )
+
+

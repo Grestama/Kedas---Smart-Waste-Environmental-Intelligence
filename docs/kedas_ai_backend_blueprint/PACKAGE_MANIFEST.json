@@ -1,0 +1,17 @@
+{
+  "project": "Kedas",
+  "package": "AI Ecosystem & Backend Engineering Blueprint",
+  "date": "2026-10-30",
+  "files": [
+    "01_STRATEGI_EKOSISTEM_AI_KEDAS.md",
+    "02_PRD_EKOSISTEM_AI_KEDAS.md",
+    "03_SRS_AI_BACKEND_KEDAS.md",
+    "04_HDD_ARSITEKTUR_AI_BACKEND_KEDAS.md",
+    "05_DATA_MODEL_API_CONTRACT_AI_KEDAS.md",
+    "06_AI_EVALUATION_GOVERNANCE_KEDAS.md",
+    "07_AI_SECURITY_MLOPS_RUNBOOK_KEDAS.md",
+    "08_MASTER_PROMPT_AGENTIC_AI_AI_BACKEND_KEDAS_12_TAHAP.md",
+    "09_RUNTIME_PROMPT_LIBRARY_KEDAS.md",
+    "README_PAKET_KEDAS_AI_BACKEND.md"
+  ]
+}

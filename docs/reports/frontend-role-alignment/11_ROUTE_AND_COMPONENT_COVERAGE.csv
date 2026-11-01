@@ -1,0 +1,46 @@
+Route,Role_Workspace,Status_Migrasi,Komponen_Kunci,Design_Tokens_Applied,Notes
+/,Public,Aligned (Source of Truth),"Hero, ServiceCards, StatsPill, AccordionFAQ, PublicNavbar, PublicFooter","brand.900, brand.800, surface, border-border, rounded-2xl, shadow-soft",Referensi visual utama
+/area-layanan,Public,Aligned (Source of Truth),"SearchInput, AreaGrid, CoverageMap, DistrictCard","brand.900, surface, border-2 border-border, rounded-2xl",Pencarian zona banjar & coverage
+/tanya,Public,Aligned (Source of Truth),"GroundedRAG, CitationCard, ProvenanceLink, ChatInput","bg-surface, border-2 border-border, rounded-2xl, pill-badge",Tanya Jawab Regulasi & Sampah
+/faq,Public,Aligned (Source of Truth),"Accordion, CategoryChips, ContactCTA","surface, rounded-2xl, border-2 border-border",Pertanyaan umum publik
+/masuk,Auth,Aligned,"LoginForm, BrandLogo, SocialAuth, InputGroup","border-2 border-border, rounded-xl, bg-surface, brand.900",Gerbang masuk terpadu role
+/daftar,Auth,Aligned,"RegisterForm, RoleSelector, TOSCheckbox, BrandLogo","border-2 border-border, rounded-xl, bg-surface, brand.900",Pendaftaran warga & mitra
+/lupa-password,Auth,Aligned,"ResetPasswordForm, SuccessState, BackButton","border-2 border-border, rounded-xl, bg-surface",Pemulihan kata sandi
+/guest,Guest,Aligned,"GuestCompanionHeader, TouristWasteGuide, BinLocatorCard","bg-canvas, rounded-2xl, border-2 border-border, brand.900",Panduan wisatawan tanpa login
+/mobile,Public/Shared,Aligned,"MobileDownloadBanner, FeatureSlider, QRScanCard","rounded-2xl, border-2 border-border, brand.900, shadow-xs",Landing page aplikasi mobile
+/app,Warga,Aligned,"UserSidebar, AppBottomNav, WastePointsCard, StatsSummary, ActivePickupTracker","brand.900, surface, rounded-2xl, border-2 border-border, border-l-4",Dashboard utama warga
+/app/setoran,Warga,Aligned,"SetoranHistoryList, StatusPillFilter, DateRangePicker, EmptyState","rounded-full pills, border-2 border-border, rounded-2xl, tabular-nums",Riwayat setoran sampah
+/app/setoran/baru,Warga,Aligned,"MultiStepForm, KedasVisionBanner, PhotoUpload, WeightEstimator, SlotSelector","rounded-2xl, border-2 border-[#D7E4D9], bg-[#E8F0E9], rounded-full",Formulir jemput / setor sampah
+/app/setoran/[id],Warga,Aligned,"WastePassportCard, QRVerification, TimelineStepper, WeightSummaryTable","rounded-2xl, border-2 border-brand-900/25, bg-surface, tabular-nums",Detail setoran & sertifikat paspor
+/app/waste-points,Warga,Aligned,"PointsBalanceBanner, RewardCatalog, TransactionHistory, RedeemModal","rounded-2xl, border-2 border-border, brand.900, shadow-xs",Poin reward daur ulang
+/app/dampak,Warga,Aligned,"ImpactMetricsGrid, CarbonSavedChart, EquivalentTreeCounter, ShareCard","rounded-2xl, border-2 border-border, brand.900, emerald-500",Kalkulator dampak ekologis
+/app/profil,Warga,Aligned,"UserProfileForm, AddressSelector, BanjarPicker, NotificationPrefs","border-2 border-border, rounded-xl, rounded-2xl, brand.900",Pengaturan akun & banjar
+/app/notifikasi,Warga,Aligned,"NotificationList, ReadIndicator, NotificationItemCard","rounded-2xl, border-2 border-border, bg-surface",Pemberitahuan aktivitas warga
+/app/panduan,Warga,Aligned,"SortingGuideAccordion, CategoryCardGrid, DosAndDonts","rounded-2xl, border-2 border-border, brand.900",Panduan pemilahan sampah warga
+/app/bantuan,Warga,Aligned,"HelpCenterFAQ, SupportContactCard, TicketForm","rounded-2xl, border-2 border-border, brand.900",Pusat bantuan warga
+/staff,Petugas,Aligned,"StaffStatsOverview, ShiftStatusBadge, DutyToggle, QuickActionCard","bg-[#1D3F35], text-white, rounded-2xl, border-2 border-border",Dashboard lapangan petugas
+/staff/tugas/tersedia,Petugas,Aligned,"TaskQueueList, LocationPinCard, EstimatedWeightBadge, ClaimButton","rounded-2xl, border-2 border-border, rounded-full, brand.900",Daftar tugas pickup tersedia
+/staff/tugas/saya,Petugas,Aligned,"ActiveTaskCard, NavigationMapCTA, StatusStepper, CallCitizenButton","rounded-2xl, border-2 border-border, shadow-xs, brand.900",Tugas aktif yang sedang dikerjakan
+/staff/tugas/[id],Petugas,Aligned,"TaskDetailHeader, NetWeightCalculator, ScaleInputGroup, PhotoProofUpload","bg-[#E8F0E9], border-2 border-[#D7E4D9], rounded-2xl, tabular-nums",Verifikasi timbangan & bukti jemput
+/staff/riwayat,Petugas,Aligned,"StaffHistoryTable, DailyAggregatePill, ExportButton","DataTable border-b-2, rounded-2xl, border-2 border-border",Riwayat penjemputan petugas
+/staff/profil,Petugas,Aligned,"StaffProfileCard, VehicleInfo, AssignedZoneBadge, LogoutButton","border-2 border-border, rounded-xl, rounded-2xl",Profil & armada petugas
+/staff/panduan-keselamatan,Petugas,Aligned,"SafetyChecklist, PPEGuideCard, EmergencyContactGrid","rounded-2xl, border-2 border-border, brand.900",SOP K3 keselamatan kerja petugas
+/hospitality,Hospitality,Aligned,"HospitalityLayout, ESGOverviewBanner, WasteStreamsGrid, TenantSelector","bg-[#122620], border-2 border-[#1D3F35], rounded-2xl, shadow-nav",Dashboard hotel/vila/resto
+/hospitality/setoran,Hospitality,Aligned,"CommercialIntakeForm, BulkVolumeCalculator, ScheduleCalendar","rounded-2xl, border-2 border-border, rounded-xl, brand.900",Permintaan pickup komersial
+/hospitality/lapor,Hospitality,Aligned,"ComplianceReportForm, ManifestUpload, WasteLogTable","rounded-2xl, border-2 border-border, DataTable header-border-2",Pelaporan regulasi sampah hotel
+/hospitality/esg,Hospitality,Aligned,"ESGScoreCard, LandfillDiversionRate, CertificateDownload","rounded-2xl, border-2 border-border, brand.900, emerald-600",Metrik ESG & sertifikasi hijau
+/hospitality/guest-companion,Hospitality,Aligned,"HotelBrandedGuide, GuestQRGenerator, MultilingualPills","rounded-2xl, border-2 border-border, rounded-full",Portal ramah tamu hotel
+/admin,Admin,Aligned,"AdminSidebar, ExecutiveMetricsGrid, TPS3RComposition, AlertBanner","rounded-2xl, border-2 border-border/80, shadow-xs, brand.900",Konsol pusat pengelola Kedas
+/admin/permintaan,Admin,Aligned,"PickupRequestsTable, StatusFilter, DispatchModal, AssignStaffDialog","DataTable border-b-2, rounded-2xl border-2, Modal rounded-2xl",Manajemen permintaan penjemputan
+/admin/pengajuan-petugas,Admin,Aligned,"StaffApplicationReview, DocumentViewer, ApprovalActionPill","rounded-2xl, border-2 border-border, rounded-full",Verifikasi calon petugas baru
+/admin/pengguna,Admin,Aligned,"UserManagementTable, RoleBadge, SearchFilter, EditUserModal","DataTable border-b-2, rounded-full badges, Modal rounded-2xl",Kelola akun warga & petugas
+/admin/area-jadwal,Admin,Aligned,"ZoneScheduleMatrix, BanjarAssignmentMap, SlotConfigForm","rounded-2xl, border-2 border-border, brand.900",Konfigurasi jadwal per wilayah
+/admin/kategori,Admin,Aligned,"WasteCategoryEditor, PricePerKgInput, RecyclableToggle","rounded-2xl, border-2 border-border, rounded-xl",Manajemen jenis sampah & harga
+/admin/mitra,Admin,Aligned,"PartnerOrgList, ContractStatusBadge, OnboardPartnerButton","rounded-2xl, border-2 border-border, DataTable border-b-2",Pengelolaan mitra TPS3R & hotel
+/admin/pendanaan,Admin,Aligned,"FundingSourceTracker, BudgetAllocationChart, GrantReportTable","rounded-2xl, border-2 border-border, brand.900, tabular-nums",Transparansi dana & subsidi daur ulang
+/admin/waste-points/rules,Admin,Aligned,"RewardRuleTable, MultiplierForm, ExpirationConfig","rounded-2xl, border-2 border-border, rounded-xl",Aturan perolehan poin sampah
+/admin/pengetahuan,Admin,Aligned,"RAGKnowledgeTable, UploadDocModal, DocumentTypeBadge, StatusPill","rounded-2xl, border-2 border-border, rounded-full, Modal rounded-2xl",Grounding regulasi & dokumen AI
+/admin/laporan,Admin,Aligned,"AnalyticsFilterBar, AggregatedVolumeChart, CSVExportCTA","rounded-2xl, border-2 border-border, brand.900, tabular-nums",Laporan agregat & analitik sampah
+/admin/audit-log,Admin,Aligned,"AuditTrailTable, TimestampCell, ActorBadge, PayloadDrawer","DataTable border-b-2, rounded-2xl, tabular-nums, Drawer",Jejak audit keamanan sistem
+/facility/*,Facility,Missing Scope,"services/facility.ts (Service layer siap, types siap)","Token siap diterapkan saat rute dibuat",Belum ada dedicated route tree (Directive 0.3)
+/community/*,Community,Missing Scope,"services/community.ts (Service layer siap, types siap)","Token siap diterapkan saat rute dibuat",Belum ada dedicated route tree (Directive 0.3)

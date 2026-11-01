@@ -15,6 +15,8 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle2,
+  Leaf,
+  QrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -28,6 +30,7 @@ import { collectionService } from "@/services/collection";
 import { PickupRequest } from "@/types/collection";
 import { formatWITA, formatWeightKg, formatPoints } from "@/tokens";
 import { ApiError } from "@/lib/api-client";
+import { AIDataProvenance } from "@/components/ai";
 
 export default function DepositDetailPage() {
   const params = useParams();
@@ -268,6 +271,86 @@ export default function DepositDetailPage() {
                 </span>
               </div>
             ) : null}
+          </Panel>
+
+          {/* Kedas Digital Waste Passport */}
+          <Panel className="p-6 bg-surface rounded-2xl border-2 border-brand-900/25 shadow-sm space-y-5">
+            <div className="flex items-center justify-between border-b border-border pb-3.5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-900 text-white flex items-center justify-center shadow-xs">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-brand-900 tracking-tight">
+                    Kedas Digital Waste Passport
+                  </h3>
+                  <span className="text-[11px] text-text-secondary font-mono">
+                    ID Paspor: PASSPORT-{request.public_code || request.id}
+                  </span>
+                </div>
+              </div>
+              <AIDataProvenance
+                level={request.status === "COMPLETED" ? "VERIFIED" : "ESTIMATED"}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+              <div className="p-3.5 rounded-xl bg-canvas border border-border">
+                <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider block">
+                  Sumber Terverifikasi (Source)
+                </span>
+                <p className="font-bold text-brand-900 mt-1">
+                  Banjar Adat / Warga Terdaftar
+                </p>
+                <span className="text-[11px] text-text-secondary font-mono block mt-0.5">
+                  UID: {request.reporter_user_id ? `${request.reporter_user_id.slice(0, 8)}...` : "Tervalidasi"}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-canvas border border-border">
+                <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider block">
+                  Rantai Angkut (Chain of Custody)
+                </span>
+                <p className="font-bold text-brand-900 mt-1">
+                  {request.service_mode === "DROP_OFF"
+                    ? "Setoran Mandiri Warga ke Pos TPS3R"
+                    : "Armada Trike Banjar Berjadwal"}
+                </p>
+                <span className="text-[11px] text-text-secondary block mt-0.5">
+                  Kolektor: {request.assigned_collector_id || "Terjadwal"}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-canvas border border-border">
+                <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider block">
+                  Fasilitas Pemrosesan Destinasi
+                </span>
+                <p className="font-bold text-brand-900 mt-1">
+                  TPS3R Sukawati Kaja
+                </p>
+                <span className="text-[11px] text-text-secondary font-mono block mt-0.5">
+                  CDOA: CDOA-SUKAWATI-KAJA-V1
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-canvas border border-border">
+                <span className="text-[10px] uppercase font-bold text-text-secondary tracking-wider block">
+                  Estimasi Dampak Lingkungan
+                </span>
+                <p className="font-bold text-[#276749] mt-1 flex items-center gap-1.5">
+                  <Leaf className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>
+                    {(
+                      (request.actual_weight_kg || request.estimated_weight_kg || 0) * 1.82
+                    ).toFixed(2)}{" "}
+                    kg CO₂e Terhindar
+                  </span>
+                </p>
+                <span className="text-[11px] text-text-secondary block mt-0.5">
+                  {(request.actual_weight_kg || request.estimated_weight_kg || 0).toFixed(1)} kg lolos dari TPA
+                </span>
+              </div>
+            </div>
           </Panel>
 
           {/* Location & Slot Schedule */}

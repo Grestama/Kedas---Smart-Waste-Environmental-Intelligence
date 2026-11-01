@@ -463,7 +463,7 @@ export default function MobileSimulatorPage() {
             </div>
 
             <div className="pt-2 text-center text-[10px] text-text-secondary">
-              WasteLink Bali Mobile v0.1.0 (Pilot Banjar Sukawati)
+              Kedas Mobile v0.1.0 (Pilot Banjar Sukawati)
             </div>
           </div>
         )}

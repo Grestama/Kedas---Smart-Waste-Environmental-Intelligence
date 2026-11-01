@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Panel } from "@/components/ui/Panel";
 import { StatCard } from "@/components/ui/StatCard";
+import { IconContainer } from "@/components/ui/IconContainer";
 import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { fetchAdminDashboard, fetchCollectorApplications } from "@/services/admin";
@@ -129,7 +130,7 @@ export default function AdminDashboardPage() {
 
       {/* Pending Application Alert Banner */}
       {pendingApps.length > 0 && (
-        <div className="p-4 rounded-xl bg-[#FFF4D9] border border-[#F7E1A0] text-[#98631C] flex items-center justify-between gap-3 shadow-xs">
+        <div className="p-4 rounded-xl bg-[#FFF4D9] border-2 border-[#F7E1A0] text-[#98631C] flex items-center justify-between gap-3 shadow-xs hover:border-[#98631C]/50 hover:-translate-y-0.5 transition-all">
           <div className="flex items-center gap-3">
             <AlertCircle className="w-5 h-5 shrink-0 text-[#98631C]" />
             <div className="text-xs">
@@ -185,13 +186,13 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (2 Cols): Material Breakdown */}
         <div className="lg:col-span-2 space-y-4">
-          <Panel className="p-5 bg-surface border border-border">
+          <Panel className="p-5 bg-surface rounded-2xl border-2 border-border/80 shadow-xs">
             <div className="flex items-center justify-between border-b border-border pb-3 mb-4">
               <div>
                 <h3 className="text-sm font-bold text-brand-900">
                   Komposisi Material Terpilah TPS3R (Berdasarkan Berat Nyata)
                 </h3>
-                <p className="text-xs text-text-muted mt-0.5">
+                <p className="text-xs text-text-secondary mt-0.5">
                   Data fisik tervalidasi dari timbangan digital petugas di pos banjar.
                 </p>
               </div>
@@ -232,11 +233,11 @@ export default function AdminDashboardPage() {
 
           {/* Quick Shortcuts to Admin Operational Modules */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Panel className="p-4 bg-surface border border-border hover:border-brand-500 transition-colors">
+            <Panel interactive className="p-4 bg-surface border-2 border-border hover:border-brand-800 transition-colors">
               <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-lg bg-brand-50 text-brand-800">
-                  <Truck className="w-5 h-5" />
-                </div>
+                <IconContainer variant="brand" size="md">
+                  <Truck className="w-5 h-5 text-white" />
+                </IconContainer>
                 <div className="space-y-1 flex-1 text-xs">
                   <h4 className="font-bold text-text-primary text-sm">
                     Mitra Daur Ulang & Batch
@@ -254,11 +255,11 @@ export default function AdminDashboardPage() {
               </div>
             </Panel>
 
-            <Panel className="p-4 bg-surface border border-border hover:border-brand-500 transition-colors">
+            <Panel interactive className="p-4 bg-surface border-2 border-border hover:border-brand-800 transition-colors">
               <div className="flex items-start gap-3">
-                <div className="p-2.5 rounded-lg bg-brand-50 text-brand-800">
-                  <History className="w-5 h-5" />
-                </div>
+                <IconContainer variant="brand" size="md">
+                  <History className="w-5 h-5 text-white" />
+                </IconContainer>
                 <div className="space-y-1 flex-1 text-xs">
                   <h4 className="font-bold text-text-primary text-sm">
                     Audit Log Penelusuran
@@ -280,7 +281,7 @@ export default function AdminDashboardPage() {
 
         {/* Right Column (1 Col): Budget & Funding Integrity */}
         <div className="space-y-6">
-          <Panel className="p-5 bg-surface border border-border space-y-4">
+          <Panel className="p-5 bg-surface rounded-2xl border-2 border-border/80 shadow-xs space-y-4">
             <div className="border-b border-border pb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-text-muted">
                 Integritas Finansial

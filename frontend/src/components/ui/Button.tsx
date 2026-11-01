@@ -28,13 +28,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium rounded-lg transition-colors duration-150 select-none disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0] focus-visible:ring-offset-2";
+      "group inline-flex items-center justify-center font-medium rounded-lg transition-all duration-fast ease-standard active:scale-[0.98] select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0] focus-visible:ring-offset-2";
 
     const variantStyles = {
       primary:
-        "bg-brand-900 text-white hover:bg-[#152e27] active:bg-[#0f221d] shadow-sm",
+        "bg-brand-900 text-white hover:bg-[#152e27] active:bg-[#0f221d] shadow-sm hover:shadow-interactive",
       secondary:
-        "bg-white text-text-primary border border-border hover:bg-[#f4f6f4] active:bg-[#e9edea] shadow-sm",
+        "bg-white text-text-primary border border-border hover:bg-[#f4f6f4] hover:border-[#c5d1c8] active:bg-[#e9edea] shadow-sm",
       soft:
         "bg-brand-100 text-brand-900 hover:bg-[#d8e6db] active:bg-[#cadacb]",
       danger:
@@ -62,14 +62,22 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
             <span>Memproses...</span>
           </>
         ) : (
           <>
-            {leftIcon && <span className="inline-flex shrink-0">{leftIcon}</span>}
+            {leftIcon && (
+              <span className="inline-flex shrink-0 transition-transform duration-fast ease-soft group-hover:-translate-x-0.5">
+                {leftIcon}
+              </span>
+            )}
             <span>{children}</span>
-            {rightIcon && <span className="inline-flex shrink-0">{rightIcon}</span>}
+            {rightIcon && (
+              <span className="inline-flex shrink-0 transition-transform duration-fast ease-soft group-hover:translate-x-0.5">
+                {rightIcon}
+              </span>
+            )}
           </>
         )}
       </button>

@@ -1,0 +1,46 @@
+Route,Role_Workspace,Render_Method,Build_Status,Smoke_Test_Result,Notes
+/,Public,Static (○),Compiled (6.26 kB),PASS,Landing page hero & layanan terpadu
+/area-layanan,Public,Static (○),Compiled (11.6 kB),PASS,Pencarian zona banjar & TPS3R
+/tanya,Public,Static (○),Compiled (9.62 kB),PASS,Grounded RAG AI assistant
+/faq,Public,Static (○),Compiled (1.04 kB),PASS,Tanya jawab umum persampahan
+/panduan,Public,Static (○),Compiled (175 B),PASS,Panduan standar pemilahan sampah
+/guest,Guest,Static (○),Compiled (5.74 kB),PASS,Portal edukasi wisatawan tanpa login
+/mobile,Public/Shared,Static (○),Compiled (10.7 kB),PASS,Landing page mobile app
+/masuk,Auth,Static (○),Compiled (5.14 kB),PASS,Form login terpadu role
+/daftar,Auth,Static (○),Compiled (5.1 kB),PASS,Registrasi warga & mitra
+/lupa-password,Auth,Static (○),Compiled (3.93 kB),PASS,Reset kata sandi pengguna
+/app,Warga,Static (○),Compiled (8.55 kB),PASS,Dashboard warga & saldo poin
+/app/setoran,Warga,Static (○),Compiled (10.8 kB),PASS,Riwayat setoran & filter status
+/app/setoran/baru,Warga,Static (○),Compiled (11.2 kB),PASS,Formulir jemput & estimasi bobot
+/app/setoran/[id],Warga,Dynamic (ƒ),Compiled (13.2 kB),PASS,Waste Passport & verifikasi QR
+/app/waste-points,Warga,Static (○),Compiled (7.33 kB),PASS,Katalog reward & penukaran sembako
+/app/dampak,Warga,Static (○),Compiled (8.47 kB),PASS,Kalkulator reduksi karbon & pohon
+/app/profil,Warga,Static (○),Compiled (10 kB),PASS,Pengaturan profil & banjar adat
+/app/notifikasi,Warga,Static (○),Compiled (175 B),PASS,Notifikasi status setoran
+/app/panduan,Warga,Static (○),Compiled (165 B),PASS,Panduan pemilahan interaktif warga
+/app/bantuan,Warga,Static (○),Compiled (175 B),PASS,Pusat bantuan & tiket warga
+/staff,Petugas,Static (○),Compiled (7.7 kB),PASS,Dashboard operasional petugas POS
+/staff/tugas/tersedia,Petugas,Static (○),Compiled (6.53 kB),PASS,Antrean tugas penjemputan baru
+/staff/tugas/saya,Petugas,Static (○),Compiled (9 kB),PASS,Tugas aktif dalam penjemputan
+/staff/tugas/[id],Petugas,Dynamic (ƒ),Compiled (13.1 kB),PASS,Input timbangan netto & foto bukti
+/staff/riwayat,Petugas,Static (○),Compiled (5.28 kB),PASS,Log riwayat ritase petugas
+/staff/profil,Petugas,Static (○),Compiled (3.43 kB),PASS,Profil petugas & data kendaraan
+/staff/panduan-keselamatan,Petugas,Static (○),Compiled (175 B),PASS,SOP keselamatan kerja & APD
+/hospitality,Hospitality,Static (○),Compiled (6.29 kB),PASS,Dashboard limbah hotel & KPI ESG
+/hospitality/setoran,Hospitality,Static (○),Compiled (5.47 kB),PASS,Request penjemputan komersial
+/hospitality/lapor,Hospitality,Static (○),Compiled (5.47 kB),PASS,Pelaporan manifest regulasi
+/hospitality/esg,Hospitality,Static (○),Compiled (4.62 kB),PASS,Sertifikat diversion rate hotel
+/hospitality/guest-companion,Hospitality,Static (○),Compiled (6.18 kB),PASS,Portal QR ramah tamu hotel
+/admin,Admin,Static (○),Compiled (5.68 kB),PASS,Konsol ringkasan Destination Operator
+/admin/permintaan,Admin,Static (○),Compiled (6.32 kB),PASS,Dispatch armada & verifikasi tiket
+/admin/pengajuan-petugas,Admin,Static (○),Compiled (8.25 kB),PASS,Verifikasi calon petugas baru
+/admin/pengguna,Admin,Static (○),Compiled (3.16 kB),PASS,Kelola akun & hak akses role
+/admin/area-jadwal,Admin,Static (○),Compiled (10.6 kB),PASS,Jadwal ritase banjar & kuota
+/admin/kategori,Admin,Static (○),Compiled (10.8 kB),PASS,Manajemen jenis sampah & tarif
+/admin/mitra,Admin,Static (○),Compiled (3.23 kB),PASS,Kelola mitra TPS3R & vendor
+/admin/pendanaan,Admin,Static (○),Compiled (3.74 kB),PASS,Transparansi dana sirkular
+/admin/waste-points/rules,Admin,Static (○),Compiled (10.6 kB),PASS,Aturan multiplier poin sampah
+/admin/pengetahuan,Admin,Static (○),Compiled (10 kB),PASS,Manajemen dokumen grounded RAG
+/admin/laporan,Admin,Static (○),Compiled (6.96 kB),PASS,Laporan analitik tonase & ekspor CSV
+/admin/audit-log,Admin,Static (○),Compiled (3.33 kB),PASS,Log audit keamanan sistem
+/_not-found,Public,Static (○),Compiled (998 B),PASS,Halaman fallback 404 terpadu

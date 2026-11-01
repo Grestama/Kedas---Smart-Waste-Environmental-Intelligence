@@ -1,0 +1,6 @@
+Path,Original_Location,Category,Status,Reason_For_Preservation,Restoration_Path
+docs/Contoh_UI/17a7bf383a4720d49dbe2e130fcffed7.jpg,docs/Contoh_UI/,Design Asset (Historis),ARCHIVED_IN_DOCS,Referensi visual mockup UI prototype asli,Tetap di lokasi dokumentasi docs/Contoh_UI/
+docs/Contoh_UI/fa6001618646bf7247219a0b8f83fcab.jpg,docs/Contoh_UI/,Design Asset (Historis),ARCHIVED_IN_DOCS,Referensi visual mockup UI prototype asli,Tetap di lokasi dokumentasi docs/Contoh_UI/
+docs/Contoh_UI/b8c0c08949e1d96c8ff4f441c8b9690a.jpg,docs/Contoh_UI/,Design Asset (Historis),ARCHIVED_IN_DOCS,Referensi visual mockup UI prototype asli,Tetap di lokasi dokumentasi docs/Contoh_UI/
+PAKET_DOKUMEN_KEDAS_AI_WEB_INNOVATION/*,PAKET_DOKUMEN_KEDAS_AI_WEB_INNOVATION/,Spesifikasi Inti,ARCHIVED_IN_ROOT,Bundel PRD/SRS/HDD resmi inovasi AI Kedas,Tetap di root sebagai repositori spesifikasi
+backend/wastelink.db,backend/,User Data / Local DB,PRESERVED_ON_DISK,Basis data seed demo SQLite aktif untuk backend,Tetap di backend/ dengan perlindungan .gitignore

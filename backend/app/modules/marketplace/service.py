@@ -792,6 +792,16 @@ def get_b2b_operational_report(
     total_est = sum(float(p.estimated_weight_kg or 0.0) for p in pickups)
     total_act = sum(float(p.actual_weight_kg or 0.0) for p in pickups if p.actual_weight_kg is not None)
 
+    # Category breakdown
+    cat_breakdown: dict[str, float] = {}
+    for p in pickups:
+        cat = db.get(WasteCategory, p.category_id)
+        cat_name = cat.name if cat else "Lainnya"
+        wt = float(p.actual_weight_kg if p.actual_weight_kg is not None else p.estimated_weight_kg or 0.0)
+        cat_breakdown[cat_name] = round(cat_breakdown.get(cat_name, 0.0) + wt, 3)
+
+    loop_rate = round((processed / len(pickups) * 100.0), 1) if pickups else 0.0
+
     return {
         "organization_id": org.id,
         "organization_name": org.name,
@@ -803,4 +813,10 @@ def get_b2b_operational_report(
         "cancelled_count": cancelled,
         "total_estimated_weight_kg": round(total_est, 3),
         "total_actual_weight_kg": round(total_act, 3),
+        "verified_loop_completion_rate": loop_rate,
+        "breakdown_by_category": cat_breakdown,
+        "audit_disclaimer": (
+            "Laporan Operasional Green Hospitality Kedas. Disusun berdasarkan rekaman riwayat alur "
+            "material terverifikasi fasilitas (operational audit trail), bukan sertifikasi lingkungan tanpa bukti lapangan."
+        ),
     }

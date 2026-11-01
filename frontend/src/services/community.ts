@@ -11,6 +11,7 @@ import {
   BanjarProfileCreateRequest,
   BanjarRegionalDashboard,
   BudgetAllocationCreateRequest,
+  CDOAResponse,
   CleanupAction,
   CleanupActionCompleteRequest,
   CleanupActionCreateRequest,
@@ -36,6 +37,7 @@ import {
   ProgramCreateRequest,
   ProgramSponsorship,
   ProgramType,
+  ServiceDirectoryResponse,
   SponsorshipCreateRequest,
 } from "@/types/community";
 
@@ -240,3 +242,16 @@ export async function allocateProgramBudget(
 ): Promise<ProgramBudgetAllocation> {
   return apiClient.post<ProgramBudgetAllocation>(`/programs/${programId}/allocations`, payload);
 }
+
+// ==============================================================================
+// CDOA & Service Directory (Tata Kelola Destinasi & Area Layanan)
+// ==============================================================================
+
+export async function getServiceDirectory(serviceAreaId: string): Promise<ServiceDirectoryResponse> {
+  return apiClient.get<ServiceDirectoryResponse>(`/community/service-directory/${serviceAreaId}`);
+}
+
+export async function listCDOAsByArea(serviceAreaId: string): Promise<CDOAResponse[]> {
+  return apiClient.get<CDOAResponse[]>(`/community/banjar/${serviceAreaId}/cdoas`);
+}
+

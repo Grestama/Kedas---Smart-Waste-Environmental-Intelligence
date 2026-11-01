@@ -13,6 +13,8 @@ import {
   MapPin,
   Clock,
   ShieldAlert,
+  Camera,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -21,6 +23,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { useToast } from "@/components/ui/Toast";
+import { VisionUploadModal } from "@/components/ai";
 import { collectionService } from "@/services/collection";
 import {
   WasteCategory,
@@ -46,6 +49,20 @@ export default function NewDepositPage() {
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isVisionModalOpen, setIsVisionModalOpen] = useState(false);
+
+  const handleApplyVisionCategory = (catCode: string) => {
+    const matched = categories.find(
+      (c) => c.code.toLowerCase() === catCode.toLowerCase() || c.code.includes(catCode)
+    );
+    if (matched) {
+      setSelectedCategoryId(matched.id);
+      toast.success(
+        "Kategori Diterapkan via Kedas Vision",
+        `Kategori berhasil dipilih: ${matched.name}`
+      );
+    }
+  };
 
   // Load categories and addresses on mount
   useEffect(() => {
@@ -204,13 +221,22 @@ export default function NewDepositPage() {
           title="1. Jalur Penyerahan Sampah"
           subtitle="Pilih apakah sampah dijemput armada motor roda tiga banjar atau Anda serahkan langsung ke TPS3R."
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Pilihan jalur penyerahan sampah">
             <div
+              role="radio"
+              aria-checked={serviceMode === "PICKUP"}
+              tabIndex={0}
               onClick={() => setServiceMode("PICKUP")}
-              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+              onKeyDown={(e) => {
+                if (e.key === " " || e.key === "Enter") {
+                  e.preventDefault();
+                  setServiceMode("PICKUP");
+                }
+              }}
+              className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-fast ease-soft active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0] ${
                 serviceMode === "PICKUP"
-                  ? "border-brand-900 bg-brand-100/40 shadow-sm"
-                  : "border-border bg-surface hover:border-brand-700/50"
+                  ? "border-brand-900 bg-brand-100/40 shadow-interactive"
+                  : "border-border bg-surface hover:border-brand-800 hover:-translate-y-0.5 hover:shadow-interactive"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -228,11 +254,20 @@ export default function NewDepositPage() {
             </div>
 
             <div
+              role="radio"
+              aria-checked={serviceMode === "DROP_OFF"}
+              tabIndex={0}
               onClick={() => setServiceMode("DROP_OFF")}
-              className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+              onKeyDown={(e) => {
+                if (e.key === " " || e.key === "Enter") {
+                  e.preventDefault();
+                  setServiceMode("DROP_OFF");
+                }
+              }}
+              className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-fast ease-soft active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0] ${
                 serviceMode === "DROP_OFF"
-                  ? "border-brand-900 bg-brand-100/40 shadow-sm"
-                  : "border-border bg-surface hover:border-brand-700/50"
+                  ? "border-[#276749] bg-emerald-50/60 shadow-interactive"
+                  : "border-border bg-surface hover:border-brand-800 hover:-translate-y-0.5 hover:shadow-interactive"
               }`}
             >
               <div className="flex items-center justify-between">
@@ -265,7 +300,22 @@ export default function NewDepositPage() {
           title="2. Pilih Kategori Sampah Terpilah"
           subtitle="Pastikan material telah dibersihkan sesuai standar kebersihan banjar."
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#E8F0E9] border-2 border-[#D7E4D9] rounded-2xl shadow-xs">
+            <div className="flex items-center gap-2.5 text-xs text-brand-900 font-medium">
+              <Sparkles className="w-4 h-4 text-emerald-700 shrink-0" />
+              <span>Bingung menentukan jenis material sampah Anda? Gunakan bantuan analisis kamera.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsVisionModalOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-brand-900 hover:bg-[#16352D] active:scale-95 rounded-xl transition-all duration-fast shadow-xs shrink-0 cursor-pointer"
+            >
+              <Camera className="w-3.5 h-3.5 text-emerald-300" />
+              <span>Bantu via Foto (Kedas Vision)</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3" role="radiogroup" aria-label="Pilihan kategori sampah">
             {categories.map((cat) => {
               const isSelected = cat.id === selectedCategoryId;
               const isSpecial = cat.category_type === "SPECIAL";
@@ -273,13 +323,22 @@ export default function NewDepositPage() {
               return (
                 <div
                   key={cat.id}
+                  role="radio"
+                  aria-checked={isSelected}
+                  tabIndex={0}
                   onClick={() => setSelectedCategoryId(cat.id)}
-                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                  onKeyDown={(e) => {
+                    if (e.key === " " || e.key === "Enter") {
+                      e.preventDefault();
+                      setSelectedCategoryId(cat.id);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-fast ease-soft active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#83b6a0] ${
                     isSelected
                       ? isSpecial
-                        ? "border-[#A43F35] bg-[#FBEAE7] shadow-sm"
-                        : "border-brand-900 bg-brand-100/40 shadow-sm"
-                      : "border-border bg-surface hover:border-brand-700/50"
+                        ? "border-[#A43F35] bg-[#FBEAE7] shadow-interactive"
+                        : "border-brand-900 bg-brand-100/40 shadow-interactive"
+                      : "border-border bg-surface hover:border-brand-800 hover:-translate-y-0.5 hover:shadow-interactive"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -349,10 +408,10 @@ export default function NewDepositPage() {
                 {addresses.map((addr) => (
                   <label
                     key={addr.id}
-                    className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-colors ${
+                    className={`flex items-start gap-3 p-3.5 rounded-xl border-2 cursor-pointer transition-all duration-fast ${
                       selectedAddressId === addr.id
-                        ? "border-brand-900 bg-brand-100/30"
-                        : "border-border bg-surface hover:bg-[#FAFBF9]"
+                        ? "border-brand-900 bg-brand-100/30 shadow-interactive"
+                        : "border-border bg-surface hover:border-brand-800 hover:-translate-y-0.5 hover:shadow-interactive"
                     }`}
                   >
                     <input
@@ -397,12 +456,12 @@ export default function NewDepositPage() {
                     <div
                       key={slot.id}
                       onClick={() => !isFull && setSelectedSlotId(slot.id)}
-                      className={`p-3.5 rounded-xl border text-xs transition-colors ${
+                      className={`p-3.5 rounded-xl border-2 text-xs transition-all duration-fast ${
                         isFull
                           ? "opacity-50 cursor-not-allowed bg-[#FAFBF9] border-border"
                           : isSelected
-                          ? "border-brand-900 bg-brand-900 text-white shadow-sm cursor-pointer"
-                          : "border-border bg-surface hover:border-brand-700/60 cursor-pointer"
+                          ? "border-brand-900 bg-brand-900 text-white shadow-interactive cursor-pointer"
+                          : "border-border bg-surface hover:border-brand-800 hover:-translate-y-0.5 hover:shadow-interactive cursor-pointer"
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -410,12 +469,12 @@ export default function NewDepositPage() {
                           {formatWITA(slot.start_time, { dateStyle: "medium" })}
                         </span>
                         <span
-                          className={`text-[10px] px-2 py-0.5 rounded font-medium ${
+                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-semibold border ${
                             isFull
-                              ? "bg-rose-100 text-rose-800"
+                              ? "bg-[#FBEAE7] text-[#A43F35] border-[#F5C6BF]"
                               : isSelected
-                              ? "bg-white/20 text-white"
-                              : "bg-emerald-100 text-emerald-800"
+                              ? "bg-white/20 text-white border-white/30"
+                              : "bg-[#E7F4EA] text-[#276749] border-[#BCE1C7]"
                           }`}
                         >
                           {isFull ? "Kuota Penuh" : `Sisa ${slot.remaining_capacity} Kuota`}
@@ -477,6 +536,13 @@ export default function NewDepositPage() {
           </Button>
         </div>
       </form>
+
+      {/* Kedas Vision Material Classification Modal */}
+      <VisionUploadModal
+        isOpen={isVisionModalOpen}
+        onClose={() => setIsVisionModalOpen(false)}
+        onApplyCategory={handleApplyVisionCategory}
+      />
     </div>
   );
 }

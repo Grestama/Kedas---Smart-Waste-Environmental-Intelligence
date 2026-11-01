@@ -1,0 +1,4 @@
+Path_Before,Category,Action,Evidence,Reason,Impact_Analysis,Validation_Test
+node_modules/.vite/vitest/CACHEDIR.TAG,Build Artifact / Cache,DELETE,Cache vitest root dari eksekusi historis,Root bukan subproyek node (tidak memiliki package.json),Aman - tidak memengaruhi frontend atau mobile runner,npm test di frontend & mobile pass
+node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json,Build Artifact / Cache,DELETE,Hasil test cache vitest root,Data temporer tidak terpakai,Aman - menghilangkan clutter untracked di git,npm test di frontend & mobile pass
+.coverage,Test Coverage Output,DELETE,File binary output pytest-cov Python di root,Artefak coverage temporer dapat dibuat ulang,Aman - dapat digenerasi otomatis via pytest-cov,pytest backend

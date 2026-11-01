@@ -119,3 +119,69 @@ class TaskStatusUpdateRequest(BaseModel):
 class AdminReassignRequest(BaseModel):
     new_collector_id: str = Field(description="ID of verified collector to assign")
     reason: str = Field(min_length=3, max_length=500, description="Alasan penugasan ulang")
+
+
+# --- Service Eligibility Schemas ---
+
+
+class ServiceEligibilityCheckRequest(BaseModel):
+    address_id: str = Field(description="ID of registered user address")
+    category_id: str = Field(description="ID of waste category")
+    slot_id: str | None = Field(default=None, description="Optional slot ID to verify capacity")
+    estimated_weight_kg: Decimal | None = Field(default=None, ge=0, le=1000)
+
+
+class ServiceEligibilityResponse(BaseModel):
+    is_eligible: bool
+    reason_code: str
+    message: str
+    service_area_id: str
+    service_area_name: str
+    category_name: str
+    cdoa_version: int | None = None
+    cdoa_agreement_no: str | None = None
+    primary_facility_name: str | None = None
+    daily_capacity_limit_kg: float | None = None
+
+
+# --- Kedas Waste Passport Schemas ---
+
+
+class WastePassportEventItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    event_type: str
+    from_status: str
+    to_status: str
+    timestamp: datetime
+    notes: str | None = None
+
+
+class WastePassportPublicResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    passport_no: str
+    status: str
+    category_name: str
+    category_type: str
+    service_area_name: str
+    administrative_area: str
+    service_mode: str
+    created_at: datetime
+    completed_at: datetime | None = None
+    estimated_weight_kg: float | None = None
+    actual_weight_kg: float | None = None
+    destination_facility_name: str | None = None
+    timeline: list[WastePassportEventItem] = Field(default_factory=list)
+    public_verification_notice: str = (
+        "Kedas Waste Passport terverifikasi resmi. Informasi aman dan melindungi data pribadi warga."
+    )
+
+
+class WastePassportDetailResponse(WastePassportPublicResponse):
+    id: str
+    address_label: str
+    assigned_collector_name: str | None = None
+    cancellation_reason: str | None = None
+
+
