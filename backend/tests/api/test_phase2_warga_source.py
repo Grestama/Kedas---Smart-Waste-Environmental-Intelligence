@@ -182,7 +182,11 @@ def test_idempotency_prevents_duplicate_and_slot_overbooking(client, db_session)
 
     addr_resp = client.post(
         "/api/v1/me/addresses",
-        json={"label": "Rumah Utama", "address_text": "Jl. Mawar No. 4", "service_area_id": area.id},
+        json={
+            "label": "Rumah Utama",
+            "address_text": "Jl. Mawar No. 4",
+            "service_area_id": area.id,
+        },
         headers=headers,
     )
     addr_id = addr_resp.json()["id"]
@@ -227,7 +231,9 @@ def test_idempotency_prevents_duplicate_and_slot_overbooking(client, db_session)
 def test_drop_off_service_mode_and_collector_isolation(client, db_session):
     """Drop-off mode creates record with TPS3R guidance and is excluded from trike collector pickup tasks."""
     citizen_token, citizen_user = _register(client, "warga_dropoff@example.com", "Warga Dropoff")
-    collector_token, collector_user = _register(client, "collector_test@example.com", "Petugas Trike")
+    collector_token, collector_user = _register(
+        client, "collector_test@example.com", "Petugas Trike"
+    )
     _grant_collector_role(db_session, collector_user["id"])
 
     headers_citizen = {"Authorization": f"Bearer {citizen_token}"}
@@ -257,7 +263,11 @@ def test_drop_off_service_mode_and_collector_isolation(client, db_session):
 
     addr_resp = client.post(
         "/api/v1/me/addresses",
-        json={"label": "Pekarangan", "address_text": "Banjar Tengah Sukawati", "service_area_id": area.id},
+        json={
+            "label": "Pekarangan",
+            "address_text": "Banjar Tengah Sukawati",
+            "service_area_id": area.id,
+        },
         headers=headers_citizen,
     )
     addr_id = addr_resp.json()["id"]
@@ -280,7 +290,9 @@ def test_drop_off_service_mode_and_collector_isolation(client, db_session):
     assert drop_off_data["service_mode"] == "DROP_OFF"
 
     # Detail includes initial event with TPS3R guidance
-    detail_resp = client.get(f"/api/v1/pickup-requests/{drop_off_data['id']}", headers=headers_citizen)
+    detail_resp = client.get(
+        f"/api/v1/pickup-requests/{drop_off_data['id']}", headers=headers_citizen
+    )
     assert detail_resp.status_code == 200
     events = detail_resp.json()["events"]
     assert len(events) >= 1
@@ -327,7 +339,11 @@ def test_cannot_book_with_other_user_address(client, db_session):
     # Citizen A creates address
     addr_resp = client.post(
         "/api/v1/me/addresses",
-        json={"label": "Rumah A", "address_text": "Jl. Raya Batuan No. 12", "service_area_id": area.id},
+        json={
+            "label": "Rumah A",
+            "address_text": "Jl. Raya Batuan No. 12",
+            "service_area_id": area.id,
+        },
         headers=headers_a,
     )
     addr_id_a = addr_resp.json()["id"]

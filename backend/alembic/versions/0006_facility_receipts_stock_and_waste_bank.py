@@ -26,7 +26,12 @@ def upgrade() -> None:
         sa.Column("facility_type", sa.String(length=50), nullable=False),
         sa.Column("service_area_id", sa.String(length=36), nullable=True),
         sa.Column("address", sa.Text(), nullable=False),
-        sa.Column("capacity_kg_per_day", sa.Numeric(precision=10, scale=2), nullable=False, server_default="2000.0"),
+        sa.Column(
+            "capacity_kg_per_day",
+            sa.Numeric(precision=10, scale=2),
+            nullable=False,
+            server_default="2000.0",
+        ),
         sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
@@ -39,7 +44,9 @@ def upgrade() -> None:
     )
     op.create_index("ix_facilities_code", "facilities", ["code"], unique=True)
     op.create_index("ix_facilities_facility_type", "facilities", ["facility_type"], unique=False)
-    op.create_index("ix_facilities_service_area_id", "facilities", ["service_area_id"], unique=False)
+    op.create_index(
+        "ix_facilities_service_area_id", "facilities", ["service_area_id"], unique=False
+    )
     op.create_index("ix_facilities_is_active", "facilities", ["is_active"], unique=False)
 
     # 2. facility_receipts
@@ -55,11 +62,23 @@ def upgrade() -> None:
         sa.Column("gross_weight_kg", sa.Numeric(precision=10, scale=3), nullable=True),
         sa.Column("tare_weight_kg", sa.Numeric(precision=10, scale=3), nullable=True),
         sa.Column("received_weight_kg", sa.Numeric(precision=10, scale=3), nullable=False),
-        sa.Column("discrepancy_kg", sa.Numeric(precision=10, scale=3), nullable=False, server_default="0.0"),
+        sa.Column(
+            "discrepancy_kg",
+            sa.Numeric(precision=10, scale=3),
+            nullable=False,
+            server_default="0.0",
+        ),
         sa.Column("discrepancy_reason", sa.Text(), nullable=True),
         sa.Column("quality_grade", sa.String(length=32), nullable=False, server_default="GRADE_A"),
-        sa.Column("contamination_percent", sa.Numeric(precision=5, scale=2), nullable=False, server_default="0.0"),
-        sa.Column("receipt_status", sa.String(length=32), nullable=False, server_default="ACCEPTED"),
+        sa.Column(
+            "contamination_percent",
+            sa.Numeric(precision=5, scale=2),
+            nullable=False,
+            server_default="0.0",
+        ),
+        sa.Column(
+            "receipt_status", sa.String(length=32), nullable=False, server_default="ACCEPTED"
+        ),
         sa.Column("idempotency_key", sa.String(length=64), nullable=True),
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
@@ -95,12 +114,27 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name="pk_facility_receipts"),
     )
-    op.create_index("ix_facility_receipts_receipt_no", "facility_receipts", ["receipt_no"], unique=True)
-    op.create_index("ix_facility_receipts_facility_id", "facility_receipts", ["facility_id"], unique=False)
-    op.create_index("ix_facility_receipts_pickup_id", "facility_receipts", ["pickup_id"], unique=False)
-    op.create_index("ix_facility_receipts_category_id", "facility_receipts", ["category_id"], unique=False)
-    op.create_index("ix_facility_receipts_receipt_status", "facility_receipts", ["receipt_status"], unique=False)
-    op.create_index("ix_facility_receipts_idempotency_key", "facility_receipts", ["idempotency_key"], unique=False)
+    op.create_index(
+        "ix_facility_receipts_receipt_no", "facility_receipts", ["receipt_no"], unique=True
+    )
+    op.create_index(
+        "ix_facility_receipts_facility_id", "facility_receipts", ["facility_id"], unique=False
+    )
+    op.create_index(
+        "ix_facility_receipts_pickup_id", "facility_receipts", ["pickup_id"], unique=False
+    )
+    op.create_index(
+        "ix_facility_receipts_category_id", "facility_receipts", ["category_id"], unique=False
+    )
+    op.create_index(
+        "ix_facility_receipts_receipt_status", "facility_receipts", ["receipt_status"], unique=False
+    )
+    op.create_index(
+        "ix_facility_receipts_idempotency_key",
+        "facility_receipts",
+        ["idempotency_key"],
+        unique=False,
+    )
 
     # 3. stock_movements
     op.create_table(
@@ -141,11 +175,19 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name="pk_stock_movements"),
     )
-    op.create_index("ix_stock_movements_facility_id", "stock_movements", ["facility_id"], unique=False)
-    op.create_index("ix_stock_movements_category_id", "stock_movements", ["category_id"], unique=False)
-    op.create_index("ix_stock_movements_movement_type", "stock_movements", ["movement_type"], unique=False)
+    op.create_index(
+        "ix_stock_movements_facility_id", "stock_movements", ["facility_id"], unique=False
+    )
+    op.create_index(
+        "ix_stock_movements_category_id", "stock_movements", ["category_id"], unique=False
+    )
+    op.create_index(
+        "ix_stock_movements_movement_type", "stock_movements", ["movement_type"], unique=False
+    )
     op.create_index("ix_stock_movements_batch_id", "stock_movements", ["batch_id"], unique=False)
-    op.create_index("ix_stock_movements_reference_id", "stock_movements", ["reference_id"], unique=False)
+    op.create_index(
+        "ix_stock_movements_reference_id", "stock_movements", ["reference_id"], unique=False
+    )
 
     # 4. waste_bank_members
     op.create_table(
@@ -171,9 +213,15 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name="pk_waste_bank_members"),
     )
-    op.create_index("ix_waste_bank_members_account_no", "waste_bank_members", ["account_no"], unique=True)
-    op.create_index("ix_waste_bank_members_user_id", "waste_bank_members", ["user_id"], unique=False)
-    op.create_index("ix_waste_bank_members_facility_id", "waste_bank_members", ["facility_id"], unique=False)
+    op.create_index(
+        "ix_waste_bank_members_account_no", "waste_bank_members", ["account_no"], unique=True
+    )
+    op.create_index(
+        "ix_waste_bank_members_user_id", "waste_bank_members", ["user_id"], unique=False
+    )
+    op.create_index(
+        "ix_waste_bank_members_facility_id", "waste_bank_members", ["facility_id"], unique=False
+    )
     op.create_index("ix_waste_bank_members_status", "waste_bank_members", ["status"], unique=False)
 
     # 5. waste_bank_transactions
@@ -214,9 +262,21 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("id", name="pk_waste_bank_transactions"),
     )
-    op.create_index("ix_waste_bank_tx_transaction_no", "waste_bank_transactions", ["transaction_no"], unique=True)
-    op.create_index("ix_waste_bank_tx_member_id", "waste_bank_transactions", ["member_id"], unique=False)
-    op.create_index("ix_waste_bank_tx_transaction_type", "waste_bank_transactions", ["transaction_type"], unique=False)
+    op.create_index(
+        "ix_waste_bank_tx_transaction_no",
+        "waste_bank_transactions",
+        ["transaction_no"],
+        unique=True,
+    )
+    op.create_index(
+        "ix_waste_bank_tx_member_id", "waste_bank_transactions", ["member_id"], unique=False
+    )
+    op.create_index(
+        "ix_waste_bank_tx_transaction_type",
+        "waste_bank_transactions",
+        ["transaction_type"],
+        unique=False,
+    )
     op.create_index("ix_waste_bank_tx_status", "waste_bank_transactions", ["status"], unique=False)
 
 

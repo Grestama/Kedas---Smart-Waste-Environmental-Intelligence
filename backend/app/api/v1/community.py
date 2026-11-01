@@ -114,9 +114,7 @@ async def list_banjar_officials(
     service_area_id: str,
     db: Annotated[Session, Depends(get_db_session)],
 ) -> list[BanjarOfficialResponse]:
-    officials = community_service.list_banjar_officials(
-        db, service_area_id=service_area_id
-    )
+    officials = community_service.list_banjar_officials(db, service_area_id=service_area_id)
     return [BanjarOfficialResponse.model_validate(o) for o in officials]
 
 
@@ -287,9 +285,7 @@ async def list_cleanup_actions(
     action_type: str | None = None,
     status: str | None = None,
 ) -> list[CleanupActionResponse]:
-    actions = community_service.list_cleanup_actions(
-        db, action_type=action_type, status=status
-    )
+    actions = community_service.list_cleanup_actions(db, action_type=action_type, status=status)
     return [CleanupActionResponse.model_validate(a) for a in actions]
 
 
@@ -518,5 +514,3 @@ async def get_destination_clean_loop_index(
     return community_service.calculate_destination_clean_loop_index(
         db, service_area_id=service_area_id
     )
-
-

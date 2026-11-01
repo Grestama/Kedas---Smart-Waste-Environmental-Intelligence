@@ -371,7 +371,9 @@ def test_volunteer_cleanup_action_and_metric_isolation(client, db_session):
     dash_resp = client.get(f"/api/v1/community/banjar/{area.id}/dashboard", headers=admin_headers)
     assert dash_resp.status_code == 200
     assert dash_resp.json()["total_pickups_count"] == 0
-    assert dash_resp.json()["total_weight_kg"] == 0.0  # Clean isolation between cleanup actions and regular citizen pickups
+    assert (
+        dash_resp.json()["total_weight_kg"] == 0.0
+    )  # Clean isolation between cleanup actions and regular citizen pickups
 
 
 def test_hazardous_waste_manifest_and_partner_license_gating(client, db_session):

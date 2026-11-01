@@ -31,6 +31,11 @@ dev = [
 requires = ["setuptools>=69.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+exclude = ["alembic*", "tests*", "docs*"]
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100
@@ -42,6 +47,7 @@ ignore = ["S101", "S104", "E501"]
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S105", "S106"]
 "alembic/*" = ["I001", "UP007", "UP035"]
+"app/cli/*" = ["T201", "T203", "E402", "S105", "F401", "I001", "F841"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -49,6 +55,7 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 plugins = ["pydantic.mypy"]
+exclude = ["alembic", "tests", "app/cli"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -877,7 +877,9 @@ def get_waste_passport_public(db: Session, public_code: str) -> WastePassportPub
         service_mode=pickup.service_mode,
         created_at=pickup.created_at,
         completed_at=pickup.completed_at,
-        estimated_weight_kg=float(pickup.estimated_weight_kg) if pickup.estimated_weight_kg else None,
+        estimated_weight_kg=float(pickup.estimated_weight_kg)
+        if pickup.estimated_weight_kg
+        else None,
         actual_weight_kg=float(pickup.actual_weight_kg) if pickup.actual_weight_kg else None,
         destination_facility_name=facility_name,
         timeline=timeline,
@@ -897,7 +899,11 @@ def get_waste_passport_detail(
     is_authorized = (
         pickup.reporter_user_id == user.id
         or pickup.assigned_collector_id == user.id
-        or bool(user_roles.intersection({"COLLECTOR", "DISPATCHER", "FACILITY_OPERATOR", "COMMUNITY_LEADER", "ADMIN"}))
+        or bool(
+            user_roles.intersection(
+                {"COLLECTOR", "DISPATCHER", "FACILITY_OPERATOR", "COMMUNITY_LEADER", "ADMIN"}
+            )
+        )
     )
     if not is_authorized:
         raise AuthorizationError("Anda tidak memiliki izin mengakses data paspor penjemputan ini.")
@@ -926,4 +932,3 @@ def get_waste_passport_detail(
         assigned_collector_name=collector.full_name if collector else None,
         cancellation_reason=pickup.cancellation_reason,
     )
-

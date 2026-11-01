@@ -232,7 +232,9 @@ class MaterialOffer(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     offer_no: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
-    offer_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)  # SUPPLY vs DEMAND
+    offer_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, index=True
+    )  # SUPPLY vs DEMAND
     partner_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True
     )
@@ -240,14 +242,21 @@ class MaterialOffer(Base):
         String(36), ForeignKey("facilities.id", ondelete="SET NULL"), nullable=True
     )
     category_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("waste_categories.id", ondelete="RESTRICT"), nullable=False, index=True
+        String(36),
+        ForeignKey("waste_categories.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     min_quantity_kg: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False)
     max_quantity_kg: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False)
     quality_grade: Mapped[str] = mapped_column(String(32), nullable=False, default="GRADE_A")
     price_indicative_idr: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    valid_until: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default=OfferStatus.OPEN.value, index=True)
+    valid_until: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=OfferStatus.OPEN.value, index=True
+    )
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_by: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
@@ -272,9 +281,13 @@ class OrganicProcessingRecord(Base):
     )
     process_type: Mapped[str] = mapped_column(String(50), nullable=False)
     input_weight_kg: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False)
-    output_product_weight_kg: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False, default=0.0)
+    output_product_weight_kg: Mapped[float] = mapped_column(
+        Numeric(10, 3), nullable=False, default=0.0
+    )
     residue_weight_kg: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False, default=0.0)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default=OrganicStatus.IN_PROGRESS.value, index=True)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default=OrganicStatus.IN_PROGRESS.value, index=True
+    )
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -315,7 +328,10 @@ class B2BOrganizationMember(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     organization_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("b2b_organizations.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("b2b_organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
@@ -325,7 +341,9 @@ class B2BOrganizationMember(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
 
-    organization: Mapped[B2BOrganization] = relationship("B2BOrganization", back_populates="members")
+    organization: Mapped[B2BOrganization] = relationship(
+        "B2BOrganization", back_populates="members"
+    )
     __table_args__ = (UniqueConstraint("organization_id", "user_id", name="uq_b2b_org_user"),)
 
 
@@ -336,7 +354,10 @@ class B2BLocation(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     organization_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("b2b_organizations.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("b2b_organizations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     address: Mapped[str] = mapped_column(Text, nullable=False)
@@ -353,8 +374,12 @@ class B2BLocation(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
 
-    organization: Mapped[B2BOrganization] = relationship("B2BOrganization", back_populates="locations")
-    pickups: Mapped[list[B2BPickupRequest]] = relationship("B2BPickupRequest", back_populates="location")
+    organization: Mapped[B2BOrganization] = relationship(
+        "B2BOrganization", back_populates="locations"
+    )
+    pickups: Mapped[list[B2BPickupRequest]] = relationship(
+        "B2BPickupRequest", back_populates="location"
+    )
 
 
 class B2BPickupRequest(Base):
@@ -370,7 +395,9 @@ class B2BPickupRequest(Base):
     category_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("waste_categories.id", ondelete="RESTRICT"), nullable=False
     )
-    scheduled_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    scheduled_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
     estimated_weight_kg: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False)
     actual_weight_kg: Mapped[float | None] = mapped_column(Numeric(10, 3), nullable=True)
     status: Mapped[str] = mapped_column(

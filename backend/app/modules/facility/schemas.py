@@ -43,7 +43,9 @@ class FacilityReceiptCreateRequest(BaseModel):
     sender_user_id: str | None = None
     gross_weight_kg: float | None = Field(default=None, ge=0)
     tare_weight_kg: float | None = Field(default=None, ge=0)
-    received_weight_kg: float = Field(gt=0, description="Berat bersih material diterima di fasilitas")
+    received_weight_kg: float = Field(
+        gt=0, description="Berat bersih material diterima di fasilitas"
+    )
     quality_grade: QualityGrade = Field(default=QualityGrade.GRADE_A)
     contamination_percent: float = Field(default=0.0, ge=0.0, le=100.0)
     receipt_status: ReceiptStatus = Field(default=ReceiptStatus.ACCEPTED)
@@ -86,8 +88,12 @@ class SortingProcessRequest(BaseModel):
     facility_id: str
     input_category_id: str
     input_weight_kg: float = Field(gt=0, description="Bobot material awal yang dipilah (kg)")
-    outputs: list[SortingOutputItem] = Field(min_length=1, description="Daftar fraksi hasil pemilahan + residu")
-    tolerance_kg: float = Field(default=0.5, ge=0.0, le=5.0, description="Toleransi susut/kelembapan yang diizinkan")
+    outputs: list[SortingOutputItem] = Field(
+        min_length=1, description="Daftar fraksi hasil pemilahan + residu"
+    )
+    tolerance_kg: float = Field(
+        default=0.5, ge=0.0, le=5.0, description="Toleransi susut/kelembapan yang diizinkan"
+    )
     notes: str | None = None
 
 

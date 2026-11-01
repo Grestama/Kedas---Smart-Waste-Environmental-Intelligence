@@ -63,7 +63,11 @@ def create_facility(db: Session, req: FacilityCreateRequest, actor_id: str) -> F
         entity_type="FACILITY",
         entity_id=facility.id,
         reason=f"Pendaftaran fasilitas baru {facility.name} ({facility.code})",
-        payload_after={"code": facility.code, "name": facility.name, "type": facility.facility_type},
+        payload_after={
+            "code": facility.code,
+            "name": facility.name,
+            "type": facility.facility_type,
+        },
     )
     db.add(audit)
     db.commit()
@@ -101,9 +105,7 @@ def create_facility_receipt(
 ) -> FacilityReceipt:
     """Record an intake receipt at facility workstation with mass discrepancy audit."""
     # Acquire row-level lock on facility to serialize intake receipt transactions
-    facility = db.scalar(
-        select(Facility).where(Facility.id == req.facility_id).with_for_update()
-    )
+    facility = db.scalar(select(Facility).where(Facility.id == req.facility_id).with_for_update())
     if not facility:
         raise NotFoundError(f"Fasilitas dengan ID '{req.facility_id}' tidak ditemukan.")
     if not facility.is_active:
@@ -132,9 +134,7 @@ def create_facility_receipt(
 
     if req.pickup_id:
         stmt_pickup = (
-            select(PickupRequest)
-            .where(PickupRequest.id == req.pickup_id)
-            .with_for_update()
+            select(PickupRequest).where(PickupRequest.id == req.pickup_id).with_for_update()
         )
         pickup = db.scalar(stmt_pickup)
         if not pickup:
@@ -265,9 +265,7 @@ def record_sorting_process(
     Stock cannot fall below zero.
     """
     # Acquire row-level lock on facility to serialize intake receipt transactions
-    facility = db.scalar(
-        select(Facility).where(Facility.id == req.facility_id).with_for_update()
-    )
+    facility = db.scalar(select(Facility).where(Facility.id == req.facility_id).with_for_update())
     if not facility:
         raise NotFoundError(f"Fasilitas dengan ID '{req.facility_id}' tidak ditemukan.")
 
@@ -291,7 +289,9 @@ def record_sorting_process(
         )
 
     movements: list[StockMovement] = []
-    process_ref_id = f"SORT-{datetime.now(UTC).strftime('%Y%m%d%H%M')}-{uuid.uuid4().hex[:6].upper()}"
+    process_ref_id = (
+        f"SORT-{datetime.now(UTC).strftime('%Y%m%d%H%M')}-{uuid.uuid4().hex[:6].upper()}"
+    )
 
     # 3. Deduction movement for input material (SORTING_IN, negative quantity)
     deduction = StockMovement(
@@ -312,8 +312,14 @@ def record_sorting_process(
         if not cat:
             raise NotFoundError(f"Kategori fraksi hasil '{item.category_id}' tidak ditemukan.")
 
-        m_type = MovementType.SORTING_RESIDUE.value if item.is_residue else MovementType.SORTING_OUTPUT.value
-        m_notes = item.notes or ("Fraksi residu pemilahan" if item.is_residue else f"Fraksi hasil pemilahan {cat.name}")
+        m_type = (
+            MovementType.SORTING_RESIDUE.value
+            if item.is_residue
+            else MovementType.SORTING_OUTPUT.value
+        )
+        m_notes = item.notes or (
+            "Fraksi residu pemilahan" if item.is_residue else f"Fraksi hasil pemilahan {cat.name}"
+        )
 
         addition = StockMovement(
             facility_id=req.facility_id,
@@ -401,9 +407,7 @@ def create_waste_bank_member(
 ) -> WasteBankMember:
     """Register a citizen as an account holder in a local Bank Sampah."""
     # Acquire row-level lock on facility to serialize intake receipt transactions
-    facility = db.scalar(
-        select(Facility).where(Facility.id == req.facility_id).with_for_update()
-    )
+    facility = db.scalar(select(Facility).where(Facility.id == req.facility_id).with_for_update())
     if not facility:
         raise NotFoundError(f"Fasilitas dengan ID '{req.facility_id}' tidak ditemukan.")
     user = db.get(User, req.user_id)
@@ -437,7 +441,11 @@ def create_waste_bank_member(
         entity_type="WASTE_BANK_MEMBER",
         entity_id=member.id,
         reason=f"Pembukaan rekening buku tabungan bank sampah #{member.account_no} untuk {user.full_name}",
-        payload_after={"account_no": member.account_no, "user_id": user.id, "facility_id": facility.id},
+        payload_after={
+            "account_no": member.account_no,
+            "user_id": user.id,
+            "facility_id": facility.id,
+        },
     )
     db.add(audit)
     db.commit()
@@ -452,11 +460,7 @@ def deposit_waste_bank(
     request_id: str | None = None,
 ) -> WasteBankTransaction:
     """Record a material deposit to member's monetary savings ledger in IDR."""
-    stmt = (
-        select(WasteBankMember)
-        .where(WasteBankMember.id == req.member_id)
-        .with_for_update()
-    )
+    stmt = select(WasteBankMember).where(WasteBankMember.id == req.member_id).with_for_update()
     member = db.scalar(stmt)
     if not member:
         raise NotFoundError("Rekening nasabah bank sampah tidak ditemukan.")
@@ -516,11 +520,7 @@ def withdraw_waste_bank(
     request_id: str | None = None,
 ) -> WasteBankTransaction:
     """Process a cash withdrawal from member's waste bank savings."""
-    stmt = (
-        select(WasteBankMember)
-        .where(WasteBankMember.id == req.member_id)
-        .with_for_update()
-    )
+    stmt = select(WasteBankMember).where(WasteBankMember.id == req.member_id).with_for_update()
     member = db.scalar(stmt)
     if not member:
         raise NotFoundError("Rekening nasabah bank sampah tidak ditemukan.")
@@ -593,9 +593,7 @@ def reverse_waste_bank_transaction(
         raise ValidationError("Transaksi ini sudah pernah dibatalkan sebelumnya.")
 
     stmt_member = (
-        select(WasteBankMember)
-        .where(WasteBankMember.id == orig_tx.member_id)
-        .with_for_update()
+        select(WasteBankMember).where(WasteBankMember.id == orig_tx.member_id).with_for_update()
     )
     member = db.scalar(stmt_member)
     if not member:

@@ -39,7 +39,9 @@ class KnowledgeDocumentCreate(BaseModel):
     cdoa_id: str | None = None
     is_public: bool = True
     version: str = "1.0"
-    content_raw: str = Field(min_length=10, description="Raw markdown or text content to be chunked")
+    content_raw: str = Field(
+        min_length=10, description="Raw markdown or text content to be chunked"
+    )
 
 
 class KnowledgeDocumentResponse(BaseModel):
@@ -67,7 +69,6 @@ class KnowledgeDocumentDetailResponse(KnowledgeDocumentResponse):
 
 class KnowledgeDocumentStatusUpdate(BaseModel):
     status: KnowledgeDocumentStatus
-
 
 
 class KnowledgeSearchQuery(BaseModel):
@@ -121,11 +122,9 @@ class AIFeedbackRequest(BaseModel):
         return self.log_id or self.interaction_id or ""
 
 
-
 class AIFeedbackResponse(BaseModel):
     success: bool
     message: str
-
 
 
 # ==============================================================================
@@ -207,7 +206,6 @@ class OperationRecommendationSchema(BaseModel):
     target_url: str | None = None
     metric_snapshot: dict[str, float | int | str] | None = None
     action_proposal: ActionProposalPayload | None = None
-
 
 
 class CopilotResponse(BaseModel):

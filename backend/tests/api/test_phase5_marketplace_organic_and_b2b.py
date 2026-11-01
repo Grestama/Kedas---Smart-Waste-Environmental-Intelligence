@@ -56,13 +56,17 @@ def _grant_role(db, user_id: str, role_code: str, status: str = "ACTIVE"):
 
 
 def test_unverified_partner_cannot_receive_delivery(client, db_session):
-    admin_token, admin = _register(client, f"admin_p5_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin P5")
+    admin_token, admin = _register(
+        client, f"admin_p5_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin P5"
+    )
     _grant_role(db_session, admin["id"], "ADMIN")
     a_headers = {"Authorization": f"Bearer {admin_token}"}
 
     cat = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"PET_P5_{uuid.uuid4().hex[:4]}", name="PET Bening", category_type="RECYCLABLE"),
+        WasteCategoryCreateRequest(
+            code=f"PET_P5_{uuid.uuid4().hex[:4]}", name="PET Bening", category_type="RECYCLABLE"
+        ),
     )
 
     # 1. Register Unverified Partner (PENDING)
@@ -85,6 +89,7 @@ def test_unverified_partner_cannot_receive_delivery(client, db_session):
 
     # Create dummy batch directly
     from app.modules.marketplace.models import MaterialBatch
+
     batch = MaterialBatch(
         batch_code=f"BATCH-{uuid.uuid4().hex[:6].upper()}",
         category_id=cat.id,
@@ -112,7 +117,10 @@ def test_unverified_partner_cannot_receive_delivery(client, db_session):
     resp_verify = client.post(
         f"/api/v1/admin/partners/{partner_id}/verify",
         headers=a_headers,
-        json={"verification_status": "VERIFIED", "notes": "Izin lingkungan dan TDP terverifikasi sah"},
+        json={
+            "verification_status": "VERIFIED",
+            "notes": "Izin lingkungan dan TDP terverifikasi sah",
+        },
     )
     assert resp_verify.status_code == 200
     assert resp_verify.json()["verification_status"] == "VERIFIED"
@@ -135,13 +143,17 @@ def test_unverified_partner_cannot_receive_delivery(client, db_session):
 
 
 def test_delivery_receipt_discrepancy_and_processing_confirmation(client, db_session):
-    admin_token, admin = _register(client, f"admin_rec_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin Delivery")
+    admin_token, admin = _register(
+        client, f"admin_rec_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin Delivery"
+    )
     _grant_role(db_session, admin["id"], "ADMIN")
     a_headers = {"Authorization": f"Bearer {admin_token}"}
 
     cat = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"KRT_P5_{uuid.uuid4().hex[:4]}", name="Kardus Box", category_type="RECYCLABLE"),
+        WasteCategoryCreateRequest(
+            code=f"KRT_P5_{uuid.uuid4().hex[:4]}", name="Kardus Box", category_type="RECYCLABLE"
+        ),
     )
 
     resp_partner = client.post(
@@ -159,6 +171,7 @@ def test_delivery_receipt_discrepancy_and_processing_confirmation(client, db_ses
     partner_id = resp_partner.json()["id"]
 
     from app.modules.marketplace.models import MaterialBatch
+
     batch = MaterialBatch(
         batch_code=f"BATCH-KRT-{uuid.uuid4().hex[:6].upper()}",
         category_id=cat.id,
@@ -200,7 +213,9 @@ def test_delivery_receipt_discrepancy_and_processing_confirmation(client, db_ses
     proc_resp = client.post(
         f"/api/v1/admin/deliveries/{delivery_id}/confirm-processing",
         headers=a_headers,
-        json={"notes": "Kardus telah dipotong dan dilebur menjadi bubur kertas pulp daur ulang #BATCH-PULP-88"},
+        json={
+            "notes": "Kardus telah dipotong dan dilebur menjadi bubur kertas pulp daur ulang #BATCH-PULP-88"
+        },
     )
     assert proc_resp.status_code == 200
 
@@ -209,13 +224,19 @@ def test_delivery_receipt_discrepancy_and_processing_confirmation(client, db_ses
 
 
 def test_material_offer_expiration_and_allocation_bounds(client, db_session):
-    admin_token, admin = _register(client, f"admin_ofr_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin Offer")
+    admin_token, admin = _register(
+        client, f"admin_ofr_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin Offer"
+    )
     _grant_role(db_session, admin["id"], "ADMIN")
     a_headers = {"Authorization": f"Bearer {admin_token}"}
 
     cat = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"ALU_P5_{uuid.uuid4().hex[:4]}", name="Aluminium Kaleng", category_type="RECYCLABLE"),
+        WasteCategoryCreateRequest(
+            code=f"ALU_P5_{uuid.uuid4().hex[:4]}",
+            name="Aluminium Kaleng",
+            category_type="RECYCLABLE",
+        ),
     )
 
     # 1. Create offer with valid future expiry
@@ -250,6 +271,7 @@ def test_material_offer_expiration_and_allocation_bounds(client, db_session):
 
     # 3. Simulate expired offer by updating valid_until into the past
     from app.modules.marketplace.models import MaterialOffer
+
     db_offer = db_session.get(MaterialOffer, offer_id)
     db_offer.valid_until = datetime.now(UTC) - timedelta(hours=2)
     db_session.commit()
@@ -265,7 +287,9 @@ def test_material_offer_expiration_and_allocation_bounds(client, db_session):
 
 
 def test_organic_processing_lifecycle(client, db_session):
-    staff_token, staff = _register(client, f"staff_org_{uuid.uuid4().hex[:6]}@tps3r.bali", "Operator Organik")
+    staff_token, staff = _register(
+        client, f"staff_org_{uuid.uuid4().hex[:6]}@tps3r.bali", "Operator Organik"
+    )
     _grant_role(db_session, staff["id"], "OPERATOR")
     s_headers = {"Authorization": f"Bearer {staff_token}"}
 
@@ -327,7 +351,9 @@ def test_b2b_commercial_tenant_isolation_and_reporting(client, db_session):
 
     cat_org = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"CAT_B2B_{uuid.uuid4().hex[:4]}", name="Organik Resto", category_type="ORGANIC"),
+        WasteCategoryCreateRequest(
+            code=f"CAT_B2B_{uuid.uuid4().hex[:4]}", name="Organik Resto", category_type="ORGANIC"
+        ),
     )
 
     # 1. User 1 registers Hotel Ubud
@@ -405,8 +431,16 @@ def test_b2b_commercial_tenant_isolation_and_reporting(client, db_session):
     _grant_role(db_session, admin["id"], "ADMIN")
     a_headers = {"Authorization": f"Bearer {admin_token}"}
 
-    client.patch(f"/api/v1/b2b/pickups/{p1_id}/status", headers=a_headers, json={"status": "COLLECTED", "actual_weight_kg": 125.0})
-    client.patch(f"/api/v1/b2b/pickups/{p2_id}/status", headers=a_headers, json={"status": "PROCESSED", "actual_weight_kg": 78.5})
+    client.patch(
+        f"/api/v1/b2b/pickups/{p1_id}/status",
+        headers=a_headers,
+        json={"status": "COLLECTED", "actual_weight_kg": 125.0},
+    )
+    client.patch(
+        f"/api/v1/b2b/pickups/{p2_id}/status",
+        headers=a_headers,
+        json={"status": "PROCESSED", "actual_weight_kg": 78.5},
+    )
 
     # 5. Check B2B Operational Report (Segregated lifecycle breakdown)
     resp_rep = client.get(
@@ -419,4 +453,4 @@ def test_b2b_commercial_tenant_isolation_and_reporting(client, db_session):
     assert report["collected_count"] == 1
     assert report["processed_count"] == 1
     assert report["total_estimated_weight_kg"] == 200.0  # 120 + 80
-    assert report["total_actual_weight_kg"] == 203.5     # 125 + 78.5
+    assert report["total_actual_weight_kg"] == 203.5  # 125 + 78.5

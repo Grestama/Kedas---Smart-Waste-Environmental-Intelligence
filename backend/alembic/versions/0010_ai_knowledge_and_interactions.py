@@ -42,8 +42,12 @@ def upgrade() -> None:
     )
     op.create_index("ix_knowledge_documents_title", "knowledge_documents", ["title"])
     op.create_index("ix_knowledge_documents_source_type", "knowledge_documents", ["source_type"])
-    op.create_index("ix_knowledge_documents_destination_id", "knowledge_documents", ["destination_id"])
-    op.create_index("ix_knowledge_documents_organization_id", "knowledge_documents", ["organization_id"])
+    op.create_index(
+        "ix_knowledge_documents_destination_id", "knowledge_documents", ["destination_id"]
+    )
+    op.create_index(
+        "ix_knowledge_documents_organization_id", "knowledge_documents", ["organization_id"]
+    )
     op.create_index("ix_knowledge_documents_is_public", "knowledge_documents", ["is_public"])
     op.create_index("ix_knowledge_documents_status", "knowledge_documents", ["status"])
 
@@ -86,7 +90,9 @@ def upgrade() -> None:
     op.create_index("ix_ai_interaction_logs_session_id", "ai_interaction_logs", ["session_id"])
     op.create_index("ix_ai_interaction_logs_user_id", "ai_interaction_logs", ["user_id"])
     op.create_index("ix_ai_interaction_logs_capability", "ai_interaction_logs", ["capability"])
-    op.create_index("ix_ai_interaction_logs_destination_id", "ai_interaction_logs", ["destination_id"])
+    op.create_index(
+        "ix_ai_interaction_logs_destination_id", "ai_interaction_logs", ["destination_id"]
+    )
     op.create_index("ix_ai_interaction_logs_created_at", "ai_interaction_logs", ["created_at"])
 
 

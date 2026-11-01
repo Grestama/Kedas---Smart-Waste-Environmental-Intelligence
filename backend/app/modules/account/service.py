@@ -54,9 +54,21 @@ def ensure_system_roles_exist(db: Session) -> None:
         ("FINANCE", "Pengelola Keuangan", "Akses anggaran dan rekonsiliasi keuangan"),
         ("BUYER", "Mitra Pembeli", "Mitra pengolah dan pembeli daur ulang"),
         ("COMMUNITY_LEADER", "Pengurus Banjar / Desa", "Prajuru banjar atau perwakilan desa adat"),
-        ("PROGRAM_MANAGER", "Pengelola Program & CSR", "Operator program atau penyalur CSR/pendanaan"),
-        ("VOLUNTEER_COORDINATOR", "Koordinator Relawan", "Koordinator aksi kebersihan pantai, sungai, dan lingkungan"),
-        ("HAZARDOUS_HANDLER", "Pengelola Limbah Khusus B3", "Petugas tersertifikasi penanganan limbah B3/medis/e-waste"),
+        (
+            "PROGRAM_MANAGER",
+            "Pengelola Program & CSR",
+            "Operator program atau penyalur CSR/pendanaan",
+        ),
+        (
+            "VOLUNTEER_COORDINATOR",
+            "Koordinator Relawan",
+            "Koordinator aksi kebersihan pantai, sungai, dan lingkungan",
+        ),
+        (
+            "HAZARDOUS_HANDLER",
+            "Pengelola Limbah Khusus B3",
+            "Petugas tersertifikasi penanganan limbah B3/medis/e-waste",
+        ),
     ]
     for code, name, desc in default_roles:
         existing = db.scalar(select(Role).where(Role.code == code))

@@ -93,7 +93,9 @@ class DeliveryReceiptRequest(BaseModel):
 
 
 class DeliveryConfirmProcessingRequest(BaseModel):
-    notes: str = Field(min_length=5, description="Bukti atau catatan pemrosesan daur ulang yang sah")
+    notes: str = Field(
+        min_length=5, description="Bukti atau catatan pemrosesan daur ulang yang sah"
+    )
 
 
 class DeliveryResponse(BaseModel):
@@ -169,7 +171,9 @@ class OrganicProcessingStartRequest(BaseModel):
 
 
 class OrganicProcessingCompleteRequest(BaseModel):
-    output_product_weight_kg: float = Field(ge=0, description="Bobot produk kompos/maggot BSF yang dihasilkan (kg)")
+    output_product_weight_kg: float = Field(
+        ge=0, description="Bobot produk kompos/maggot BSF yang dihasilkan (kg)"
+    )
     residue_weight_kg: float = Field(ge=0, description="Bobot residu sisa proses (kg)")
     status: OrganicStatus = OrganicStatus.MATURED
     notes: str | None = None
@@ -297,4 +301,3 @@ class B2BOperationalReportResponse(BaseModel):
         "Laporan Operasional Green Hospitality Kedas. Disusun berdasarkan rekaman riwayat alur "
         "material terverifikasi fasilitas (operational audit trail), bukan sertifikasi lingkungan tanpa bukti lapangan."
     )
-

@@ -110,26 +110,33 @@ class AIProviderAdapter:
         # Match category candidates from known taxonomy
         candidates: list[dict[str, Any]] = []
         for cat in known_categories[:3]:
-            candidates.append({
-                "category_code": cat.get("code", "ANORGANIK"),
-                "category_name": cat.get("name", "Anorganik Daur Ulang"),
-                "confidence_band": "HIGH" if cat.get("code") == "PLASTIK_PET" or len(candidates) == 0 else "MEDIUM",
-                "confidence_score": 0.92 if len(candidates) == 0 else 0.74,
-                "preparation_instructions": cat.get(
-                    "handling_instructions", "Bersihkan dari sisa cairan/kotoran, keringkan, dan pipihkan."
-                ),
-                "is_accepted_in_area": True,
-            })
+            candidates.append(
+                {
+                    "category_code": cat.get("code", "ANORGANIK"),
+                    "category_name": cat.get("name", "Anorganik Daur Ulang"),
+                    "confidence_band": "HIGH"
+                    if cat.get("code") == "PLASTIK_PET" or len(candidates) == 0
+                    else "MEDIUM",
+                    "confidence_score": 0.92 if len(candidates) == 0 else 0.74,
+                    "preparation_instructions": cat.get(
+                        "handling_instructions",
+                        "Bersihkan dari sisa cairan/kotoran, keringkan, dan pipihkan.",
+                    ),
+                    "is_accepted_in_area": True,
+                }
+            )
 
         if not candidates:
-            candidates.append({
-                "category_code": "ANORGANIK_CAMPUR",
-                "category_name": "Anorganik Terpilah",
-                "confidence_band": "MEDIUM",
-                "confidence_score": 0.75,
-                "preparation_instructions": "Pisahkan material basah dan kering sebelum dimasukkan ke wadah.",
-                "is_accepted_in_area": True,
-            })
+            candidates.append(
+                {
+                    "category_code": "ANORGANIK_CAMPUR",
+                    "category_name": "Anorganik Terpilah",
+                    "confidence_band": "MEDIUM",
+                    "confidence_score": 0.75,
+                    "preparation_instructions": "Pisahkan material basah dan kering sebelum dimasukkan ke wadah.",
+                    "is_accepted_in_area": True,
+                }
+            )
 
         latency = int((time.perf_counter() - start_time) * 1000)
         self.total_latency_ms += latency

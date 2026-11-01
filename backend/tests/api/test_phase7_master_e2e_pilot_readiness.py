@@ -387,7 +387,12 @@ def test_master_circular_ecosystem_e2e(client, db_session):
             "input_weight_kg": 12.4,
             "outputs": [
                 {"category_id": recyclable_cat.id, "quantity_kg": 11.2, "is_residue": False},
-                {"category_id": residual_cat.id, "quantity_kg": 1.2, "is_residue": True, "notes": "Residu selotip kotor"},
+                {
+                    "category_id": residual_cat.id,
+                    "quantity_kg": 1.2,
+                    "is_residue": True,
+                    "notes": "Residu selotip kotor",
+                },
             ],
             "tolerance_kg": 0.5,
             "notes": "Pemisahan kardus dan residu selotip kotor",
@@ -511,7 +516,9 @@ def test_master_circular_ecosystem_e2e(client, db_session):
     # Confirm processing with verified recycling proof
     proc_resp = client.post(
         f"/api/v1/admin/deliveries/{deliv_id}/confirm-processing",
-        json={"notes": "Flake PET dilebur menjadi biji plastik rPET: Sertifikat Daur Ulang #RC-BALI-9981"},
+        json={
+            "notes": "Flake PET dilebur menjadi biji plastik rPET: Sertifikat Daur Ulang #RC-BALI-9981"
+        },
         headers=staff_headers,
     )
     assert proc_resp.status_code == 200

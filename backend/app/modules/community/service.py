@@ -158,9 +158,7 @@ def list_banjar_officials(db: Session, service_area_id: str) -> list[BanjarOffic
     )
 
 
-def check_banjar_territorial_access(
-    db: Session, service_area_id: str, user: User
-) -> bool:
+def check_banjar_territorial_access(db: Session, service_area_id: str, user: User) -> bool:
     """Enforce territorial access control: Admin or active official of this banjar."""
     # Check if user is admin
     user_role_codes = [r.role.code for r in user.roles if r.role]
@@ -210,30 +208,41 @@ def get_banjar_regional_dashboard(
     compliance = profile.target_sorting_percent if profile else 70.0
 
     # Open complaints
-    open_complaints = db.scalar(
-        select(func.count(CommunityComplaint.id)).where(
-            CommunityComplaint.service_area_id == service_area_id,
-            CommunityComplaint.status.in_([ComplaintStatus.REPORTED.value, ComplaintStatus.INVESTIGATING.value]),
+    open_complaints = (
+        db.scalar(
+            select(func.count(CommunityComplaint.id)).where(
+                CommunityComplaint.service_area_id == service_area_id,
+                CommunityComplaint.status.in_(
+                    [ComplaintStatus.REPORTED.value, ComplaintStatus.INVESTIGATING.value]
+                ),
+            )
         )
-    ) or 0
+        or 0
+    )
 
     # Upcoming events
     now = datetime.now(UTC)
-    upcoming_events = db.scalar(
-        select(func.count(CommunityEvent.id)).where(
-            CommunityEvent.service_area_id == service_area_id,
-            CommunityEvent.event_date >= now,
-            CommunityEvent.status == CommunityEventStatus.SCHEDULED.value,
+    upcoming_events = (
+        db.scalar(
+            select(func.count(CommunityEvent.id)).where(
+                CommunityEvent.service_area_id == service_area_id,
+                CommunityEvent.event_date >= now,
+                CommunityEvent.status == CommunityEventStatus.SCHEDULED.value,
+            )
         )
-    ) or 0
+        or 0
+    )
 
     # Active programs targeting this area
-    active_programs = db.scalar(
-        select(func.count(FundingProgram.id)).where(
-            FundingProgram.target_service_area_id == service_area_id,
-            FundingProgram.status == "ACTIVE",
+    active_programs = (
+        db.scalar(
+            select(func.count(FundingProgram.id)).where(
+                FundingProgram.target_service_area_id == service_area_id,
+                FundingProgram.status == "ACTIVE",
+            )
         )
-    ) or 0
+        or 0
+    )
 
     return BanjarRegionalDashboardResponse(
         service_area_id=service_area_id,
@@ -342,7 +351,10 @@ def record_event_attendance(
 
 
 def create_community_complaint(
-    db: Session, req: CommunityComplaintCreateRequest, reporter_id: str, request_id: str | None = None
+    db: Session,
+    req: CommunityComplaintCreateRequest,
+    reporter_id: str,
+    request_id: str | None = None,
 ) -> CommunityComplaint:
     """File a grievance or waste violation in a Banjar."""
     area = db.scalar(select(ServiceArea).where(ServiceArea.id == req.service_area_id))
@@ -513,7 +525,9 @@ def verify_cleanup_action(
         raise NotFoundError(f"Aksi kebersihan dengan ID '{action_id}' tidak ditemukan.")
 
     if action.status != CleanupActionStatus.COMPLETED.value:
-        raise ValidationError("Hanya aksi pembersihan yang berstatus COMPLETED yang dapat diverifikasi.")
+        raise ValidationError(
+            "Hanya aksi pembersihan yang berstatus COMPLETED yang dapat diverifikasi."
+        )
 
     action.status = CleanupActionStatus.VERIFIED.value
     action.verified_by = verifier_id
@@ -692,9 +706,14 @@ def create_cdoa_draft(
     if not area:
         raise NotFoundError(f"Wilayah layanan dengan ID '{req.service_area_id}' tidak ditemukan.")
 
-    existing_count = db.scalar(
-        select(func.count(CDOAAgreement.id)).where(CDOAAgreement.service_area_id == req.service_area_id)
-    ) or 0
+    existing_count = (
+        db.scalar(
+            select(func.count(CDOAAgreement.id)).where(
+                CDOAAgreement.service_area_id == req.service_area_id
+            )
+        )
+        or 0
+    )
     version = existing_count + 1
     clean_code = area.code.upper().replace(" ", "-")
     agreement_no = f"CDOA-{clean_code}-V{version}"
@@ -755,7 +774,11 @@ def list_cdoas_by_service_area(db: Session, service_area_id: str) -> list[CDOAAg
 
 
 def approve_cdoa(
-    db: Session, cdoa_id: str, actor_id: str, notes: str | None = None, request_id: str | None = None
+    db: Session,
+    cdoa_id: str,
+    actor_id: str,
+    notes: str | None = None,
+    request_id: str | None = None,
 ) -> CDOAAgreement:
     """Approve a draft CDOA by Banjar leader or platform Admin."""
     cdoa = get_cdoa_by_id(db, cdoa_id)
@@ -783,7 +806,11 @@ def approve_cdoa(
 
 
 def publish_cdoa(
-    db: Session, cdoa_id: str, actor_id: str, notes: str | None = None, request_id: str | None = None
+    db: Session,
+    cdoa_id: str,
+    actor_id: str,
+    notes: str | None = None,
+    request_id: str | None = None,
 ) -> CDOAAgreement:
     """Publish an approved CDOA, making its operational rules active and superseding previous versions."""
     cdoa = get_cdoa_by_id(db, cdoa_id)
@@ -874,7 +901,9 @@ def get_service_directory(db: Session, service_area_id: str) -> ServiceDirectory
     else:
         # Default all active
         all_cats = db.scalars(
-            select(WasteCategory).where(WasteCategory.is_active.is_(True)).order_by(WasteCategory.display_order.asc())
+            select(WasteCategory)
+            .where(WasteCategory.is_active.is_(True))
+            .order_by(WasteCategory.display_order.asc())
         ).all()
         for cat in all_cats:
             accepted_cats.append(
@@ -900,9 +929,7 @@ def get_service_directory(db: Session, service_area_id: str) -> ServiceDirectory
     )
 
 
-def calculate_destination_clean_loop_index(
-    db: Session, service_area_id: str
-) -> DCLIResponse:
+def calculate_destination_clean_loop_index(db: Session, service_area_id: str) -> DCLIResponse:
     """Calculate the Destination Clean Loop Index (DCLI) for a given service area.
 
     Safeguard: DCLI must never generate synthetic/green scores when operational
@@ -919,9 +946,7 @@ def calculate_destination_clean_loop_index(
     )
 
     total_pickups = len(pickups)
-    total_weight = float(
-        sum(p.actual_weight_kg or p.estimated_weight_kg or 0 for p in pickups)
-    )
+    total_weight = float(sum(p.actual_weight_kg or p.estimated_weight_kg or 0 for p in pickups))
 
     min_operational_cycles = 3
 
@@ -978,7 +1003,9 @@ def calculate_destination_clean_loop_index(
 
     # We have sufficient data (>= 3 cycles)
     completed_pickups = [
-        p for p in pickups if p.status in [PickupStatus.COMPLETED.value, PickupStatus.COLLECTED.value]
+        p
+        for p in pickups
+        if p.status in [PickupStatus.COMPLETED.value, PickupStatus.COLLECTED.value]
     ]
     cancelled_pickups = [p for p in pickups if p.status == PickupStatus.CANCELLED.value]
     rejected_pickups = [p for p in pickups if p.status == PickupStatus.REJECTED.value]
@@ -997,7 +1024,9 @@ def calculate_destination_clean_loop_index(
         max(0.0, min(100.0, (len(weighed_pickups) / total_pickups) * 100.0)), 1
     )
     mass_balance_score = (
-        90.0 if len(weighed_pickups) >= len(completed_pickups) and len(weighed_pickups) > 0 else 75.0
+        90.0
+        if len(weighed_pickups) >= len(completed_pickups) and len(weighed_pickups) > 0
+        else 75.0
     )
     participation_score = round(min(100.0, unique_participants * 20.0), 1)
 
@@ -1062,5 +1091,3 @@ def calculate_destination_clean_loop_index(
         total_pickups_analyzed=total_pickups,
         total_weight_kg_analyzed=round(total_weight, 2),
     )
-
-

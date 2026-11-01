@@ -149,7 +149,9 @@ def record_sponsorship(
     request_id: str | None = None,
 ) -> ProgramSponsorship:
     """Record an incoming CSR/donor sponsorship injection into a program budget."""
-    program = db.scalar(select(FundingProgram).where(FundingProgram.id == program_id).with_for_update())
+    program = db.scalar(
+        select(FundingProgram).where(FundingProgram.id == program_id).with_for_update()
+    )
     if not program:
         raise NotFoundError(f"Program pendanaan dengan ID '{program_id}' tidak ditemukan.")
 
@@ -191,7 +193,9 @@ def allocate_program_budget(
     request_id: str | None = None,
 ) -> ProgramBudgetAllocation:
     """Allocate budget from a program to a specific banjar/service area."""
-    program = db.scalar(select(FundingProgram).where(FundingProgram.id == program_id).with_for_update())
+    program = db.scalar(
+        select(FundingProgram).where(FundingProgram.id == program_id).with_for_update()
+    )
     if not program:
         raise NotFoundError(f"Program pendanaan dengan ID '{program_id}' tidak ditemukan.")
 

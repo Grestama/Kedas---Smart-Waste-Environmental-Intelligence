@@ -117,9 +117,7 @@ class PickupRequest(Base, TimestampMixin):
     service_mode: Mapped[str] = mapped_column(
         String(32), default="PICKUP", nullable=False, index=True
     )
-    idempotency_key: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, index=True
-    )
+    idempotency_key: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     assigned_collector_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )

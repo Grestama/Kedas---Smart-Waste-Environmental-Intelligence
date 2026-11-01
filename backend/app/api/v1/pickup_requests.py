@@ -125,4 +125,3 @@ async def get_authenticated_passport(
     db: Annotated[Session, Depends(get_db_session)],
 ) -> WastePassportDetailResponse:
     return collection_service.get_waste_passport_detail(db, user=current_user, pickup_id=id)
-

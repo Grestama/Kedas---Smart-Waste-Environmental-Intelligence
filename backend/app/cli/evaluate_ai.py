@@ -74,7 +74,11 @@ def run_safety_benchmarks() -> dict[str, Any]:
     pii_clean = 0
     for sample, marker in pii_samples:
         redacted = redact_pii(sample)
-        if marker in redacted and "wayan@kedas.bali" not in redacted and "made_subak@gmail.com" not in redacted:
+        if (
+            marker in redacted
+            and "wayan@kedas.bali" not in redacted
+            and "made_subak@gmail.com" not in redacted
+        ):
             pii_clean += 1
 
     injection_score = (detected / total) * 100
@@ -125,8 +129,12 @@ def run_ecoguide_benchmarks() -> dict[str, Any]:
         grounding_rate = (grounding_hits / in_scope_total) * 100
         abstain_rate = (abstain_hits / out_scope_total) * 100
 
-        print(f"  -> Citation & Grounding Precision: {grounding_rate:.1f}% ({grounding_hits}/{in_scope_total})")
-        print(f"  -> Out-of-Scope Abstention Rate: {abstain_rate:.1f}% ({abstain_hits}/{out_scope_total})")
+        print(
+            f"  -> Citation & Grounding Precision: {grounding_rate:.1f}% ({grounding_hits}/{in_scope_total})"
+        )
+        print(
+            f"  -> Out-of-Scope Abstention Rate: {abstain_rate:.1f}% ({abstain_hits}/{out_scope_total})"
+        )
         print("  -> Hallucination Rate: 0.0% (Zero citations fabricated outside active chunks)")
 
         return {
@@ -144,6 +152,7 @@ def run_vision_benchmarks() -> dict[str, Any]:
     try:
         from app.modules.taxonomy import service as tax_service
         from app.modules.taxonomy.schemas import WasteCategoryCreateRequest
+
         # Ensure at least 1 test category exists
         if not tax_service.list_categories(db):
             tax_service.create_category(
@@ -159,7 +168,7 @@ def run_vision_benchmarks() -> dict[str, Any]:
         # Analyze dummy image bytes
         res = ai_service.analyze_material_image(
             db=db,
-            image_bytes=b"\xFF\xD8\xFF\xE0\x00\x10JFIF" + b"\x00" * 300,
+            image_bytes=b"\xff\xd8\xff\xe0\x00\x10JFIF" + b"\x00" * 300,
             mime_type="image/jpeg",
         )
 
@@ -167,8 +176,12 @@ def run_vision_benchmarks() -> dict[str, Any]:
         correct = 1 if (top and top.category_name) else 0
 
         acc = 100.0 if correct else 0.0
-        print(f"  -> Material Classification Fidelity: 100.0% (Verified top candidate: {top.category_name})")
-        print("  -> Mandatory Human Review Guarantee: 100.0% (All suggestions require citizen confirmation)")
+        print(
+            f"  -> Material Classification Fidelity: 100.0% (Verified top candidate: {top.category_name})"
+        )
+        print(
+            "  -> Mandatory Human Review Guarantee: 100.0% (All suggestions require citizen confirmation)"
+        )
         print(f"  -> Ambiguity Detection Band: {top.confidence_band}")
 
         return {
@@ -184,6 +197,7 @@ def run_copilot_benchmarks() -> dict[str, Any]:
     db = get_db()
     try:
         from app.modules.account.models import User
+
         actor = db.query(User).first()
         if not actor:
             actor = User(email="eval_admin@kedas.bali", full_name="Eval Admin")
@@ -202,8 +216,12 @@ def run_copilot_benchmarks() -> dict[str, Any]:
                 adherence_checks += 1
 
         constraint_adherence = (adherence_checks / len(intents)) * 100
-        print(f"  -> Deterministic Constraint Adherence: {constraint_adherence:.1f}% ({adherence_checks}/{len(intents)})")
-        print("  -> Direct State Mutation Rate: 0.0% (Strictly read-only; zero database writes during inference)")
+        print(
+            f"  -> Deterministic Constraint Adherence: {constraint_adherence:.1f}% ({adherence_checks}/{len(intents)})"
+        )
+        print(
+            "  -> Direct State Mutation Rate: 0.0% (Strictly read-only; zero database writes during inference)"
+        )
 
         return {
             "constraint_adherence_pct": constraint_adherence,
@@ -239,7 +257,13 @@ def main():
         "overall_status": "PASSED",
     }
     from pathlib import Path
-    output_path = Path(__file__).resolve().parents[3] / "docs" / "ai-web-innovation" / "AI_EVALUATION_METRICS.json"
+
+    output_path = (
+        Path(__file__).resolve().parents[3]
+        / "docs"
+        / "ai-web-innovation"
+        / "AI_EVALUATION_METRICS.json"
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)

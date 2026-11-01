@@ -53,10 +53,18 @@ def _grant_role(db, user_id: str, role_code: str, status: str = "ACTIVE"):
 
 
 def test_facility_registration_and_rbac(client, db_session):
-    admin_token, _ = _register(client, f"admin_fac_{uuid.uuid4().hex[:6]}@wastelink.bali", "Admin TPS3R")
-    _grant_role(db_session, client.get("/api/v1/me", headers={"Authorization": f"Bearer {admin_token}"}).json()["id"], "ADMIN")
+    admin_token, _ = _register(
+        client, f"admin_fac_{uuid.uuid4().hex[:6]}@wastelink.bali", "Admin TPS3R"
+    )
+    _grant_role(
+        db_session,
+        client.get("/api/v1/me", headers={"Authorization": f"Bearer {admin_token}"}).json()["id"],
+        "ADMIN",
+    )
 
-    user_token, _ = _register(client, f"user_fac_{uuid.uuid4().hex[:6]}@wastelink.bali", "Warga Biasa")
+    user_token, _ = _register(
+        client, f"user_fac_{uuid.uuid4().hex[:6]}@wastelink.bali", "Warga Biasa"
+    )
 
     # 1. Citizen cannot create facility (403)
     resp = client.post(
@@ -98,13 +106,19 @@ def test_facility_registration_and_rbac(client, db_session):
 
 
 def test_facility_receipt_with_pickup_and_discrepancy(client, db_session):
-    staff_token, staff_user = _register(client, f"staff_{uuid.uuid4().hex[:6]}@tps3r.bali", "Operator TPS3R")
+    staff_token, staff_user = _register(
+        client, f"staff_{uuid.uuid4().hex[:6]}@tps3r.bali", "Operator TPS3R"
+    )
     _grant_role(db_session, staff_user["id"], "OPERATOR")
 
-    collector_token, collector_user = _register(client, f"col_{uuid.uuid4().hex[:6]}@tps3r.bali", "Petugas Pengangkut")
+    collector_token, collector_user = _register(
+        client, f"col_{uuid.uuid4().hex[:6]}@tps3r.bali", "Petugas Pengangkut"
+    )
     _grant_role(db_session, collector_user["id"], "COLLECTOR")
 
-    citizen_token, citizen_user = _register(client, f"cit_{uuid.uuid4().hex[:6]}@warga.bali", "Warga Sukawati")
+    citizen_token, citizen_user = _register(
+        client, f"cit_{uuid.uuid4().hex[:6]}@warga.bali", "Warga Sukawati"
+    )
     headers_citizen = {"Authorization": f"Bearer {citizen_token}"}
     headers_col = {"Authorization": f"Bearer {collector_token}"}
 
@@ -158,7 +172,11 @@ def test_facility_receipt_with_pickup_and_discrepancy(client, db_session):
     addr_resp = client.post(
         "/api/v1/me/addresses",
         headers=headers_citizen,
-        json={"label": "Rumah", "address_text": "Banjar Tengah Sukawati", "service_area_id": area.id},
+        json={
+            "label": "Rumah",
+            "address_text": "Banjar Tengah Sukawati",
+            "service_area_id": area.id,
+        },
     )
     addr_id = addr_resp.json()["id"]
 
@@ -179,7 +197,11 @@ def test_facility_receipt_with_pickup_and_discrepancy(client, db_session):
 
     # Collector accepts task
     client.post(f"/api/v1/collector/tasks/{pickup_id}/accept", headers=headers_col)
-    client.post(f"/api/v1/collector/tasks/{pickup_id}/status", headers=headers_col, json={"status": "IN_TRANSIT"})
+    client.post(
+        f"/api/v1/collector/tasks/{pickup_id}/status",
+        headers=headers_col,
+        json={"status": "IN_TRANSIT"},
+    )
 
     # Collector QC & verified weigh: 10.0 kg net
     client.post(
@@ -228,7 +250,9 @@ def test_facility_receipt_with_pickup_and_discrepancy(client, db_session):
 
 
 def test_facility_receipt_idempotency(client, db_session):
-    staff_token, staff_user = _register(client, f"staff_idemp_{uuid.uuid4().hex[:6]}@tps3r.bali", "Operator")
+    staff_token, staff_user = _register(
+        client, f"staff_idemp_{uuid.uuid4().hex[:6]}@tps3r.bali", "Operator"
+    )
     _grant_role(db_session, staff_user["id"], "OPERATOR")
 
     cat = taxonomy_service.create_category(
@@ -241,7 +265,9 @@ def test_facility_receipt_idempotency(client, db_session):
         ),
     )
 
-    admin_token, admin_user = _register(client, f"admin_idemp_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin")
+    admin_token, admin_user = _register(
+        client, f"admin_idemp_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin"
+    )
     _grant_role(db_session, admin_user["id"], "ADMIN")
     fac_resp = client.post(
         "/api/v1/facilities",
@@ -266,50 +292,91 @@ def test_facility_receipt_idempotency(client, db_session):
     }
 
     # First call
-    resp1 = client.post("/api/v1/facilities/receipts", headers={"Authorization": f"Bearer {staff_token}"}, json=payload)
+    resp1 = client.post(
+        "/api/v1/facilities/receipts",
+        headers={"Authorization": f"Bearer {staff_token}"},
+        json=payload,
+    )
     assert resp1.status_code == 201
     id1 = resp1.json()["id"]
 
     # Duplicate call with same idempotency key
-    resp2 = client.post("/api/v1/facilities/receipts", headers={"Authorization": f"Bearer {staff_token}"}, json=payload)
+    resp2 = client.post(
+        "/api/v1/facilities/receipts",
+        headers={"Authorization": f"Bearer {staff_token}"},
+        json=payload,
+    )
     assert resp2.status_code == 201
     id2 = resp2.json()["id"]
     assert id1 == id2
 
     # Stock should be exactly 25.0 kg (not 50.0 kg)
-    stock_resp = client.get(f"/api/v1/facilities/{facility_id}/stock", headers={"Authorization": f"Bearer {staff_token}"})
+    stock_resp = client.get(
+        f"/api/v1/facilities/{facility_id}/stock",
+        headers={"Authorization": f"Bearer {staff_token}"},
+    )
     assert stock_resp.status_code == 200
     assert stock_resp.json()["total_stock_kg"] == 25.0
 
 
 def test_sorting_process_mass_balance_and_residue(client, db_session):
-    staff_token, staff_user = _register(client, f"staff_sort_{uuid.uuid4().hex[:6]}@tps3r.bali", "Staff Sortir")
+    staff_token, staff_user = _register(
+        client, f"staff_sort_{uuid.uuid4().hex[:6]}@tps3r.bali", "Staff Sortir"
+    )
     _grant_role(db_session, staff_user["id"], "OPERATOR")
 
     # Categories: Mixed Inorganic (input), PET (output), Metal (output), Residue (output)
     cat_mixed = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"MIX_{uuid.uuid4().hex[:4]}", name="Anorganik Campur", category_type="RECYCLABLE", requires_special_handling=False),
+        WasteCategoryCreateRequest(
+            code=f"MIX_{uuid.uuid4().hex[:4]}",
+            name="Anorganik Campur",
+            category_type="RECYCLABLE",
+            requires_special_handling=False,
+        ),
     )
     cat_pet = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"PET_{uuid.uuid4().hex[:4]}", name="Plastik PET Bening", category_type="RECYCLABLE", requires_special_handling=False),
+        WasteCategoryCreateRequest(
+            code=f"PET_{uuid.uuid4().hex[:4]}",
+            name="Plastik PET Bening",
+            category_type="RECYCLABLE",
+            requires_special_handling=False,
+        ),
     )
     cat_metal = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"MET_{uuid.uuid4().hex[:4]}", name="Logam / Kaleng", category_type="RECYCLABLE", requires_special_handling=False),
+        WasteCategoryCreateRequest(
+            code=f"MET_{uuid.uuid4().hex[:4]}",
+            name="Logam / Kaleng",
+            category_type="RECYCLABLE",
+            requires_special_handling=False,
+        ),
     )
     cat_residue = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"RES_{uuid.uuid4().hex[:4]}", name="Residu TPA", category_type="RESIDUAL", requires_special_handling=False),
+        WasteCategoryCreateRequest(
+            code=f"RES_{uuid.uuid4().hex[:4]}",
+            name="Residu TPA",
+            category_type="RESIDUAL",
+            requires_special_handling=False,
+        ),
     )
 
-    admin_token, admin_user = _register(client, f"admin_sort_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin")
+    admin_token, admin_user = _register(
+        client, f"admin_sort_{uuid.uuid4().hex[:6]}@tps3r.bali", "Admin"
+    )
     _grant_role(db_session, admin_user["id"], "ADMIN")
     fac_resp = client.post(
         "/api/v1/facilities",
         headers={"Authorization": f"Bearer {admin_token}"},
-        json={"code": f"TPS_SORT_{uuid.uuid4().hex[:6].upper()}", "name": "TPS3R Sorting Hub", "facility_type": "TPS3R", "address": "Sukawati", "capacity_kg_per_day": 2000.0},
+        json={
+            "code": f"TPS_SORT_{uuid.uuid4().hex[:6].upper()}",
+            "name": "TPS3R Sorting Hub",
+            "facility_type": "TPS3R",
+            "address": "Sukawati",
+            "capacity_kg_per_day": 2000.0,
+        },
     )
     facility_id = fac_resp.json()["id"]
 
@@ -366,7 +433,12 @@ def test_sorting_process_mass_balance_and_residue(client, db_session):
             "outputs": [
                 {"category_id": cat_pet.id, "quantity_kg": 25.0, "is_residue": False},
                 {"category_id": cat_metal.id, "quantity_kg": 15.0, "is_residue": False},
-                {"category_id": cat_residue.id, "quantity_kg": 9.8, "is_residue": True, "notes": "Residu sisa pilah"},
+                {
+                    "category_id": cat_residue.id,
+                    "quantity_kg": 9.8,
+                    "is_residue": True,
+                    "notes": "Residu sisa pilah",
+                },
             ],
             "tolerance_kg": 0.5,
             "notes": "Proses pemilahan manual ban berjalan shift pagi",
@@ -377,7 +449,10 @@ def test_sorting_process_mass_balance_and_residue(client, db_session):
     assert len(movements) == 4  # 1 deduction + 3 additions
 
     # Check updated stock
-    summary = client.get(f"/api/v1/facilities/{facility_id}/stock", headers={"Authorization": f"Bearer {staff_token}"}).json()
+    summary = client.get(
+        f"/api/v1/facilities/{facility_id}/stock",
+        headers={"Authorization": f"Bearer {staff_token}"},
+    ).json()
     stock_map = {item["category_id"]: item["current_stock_kg"] for item in summary["items"]}
     assert stock_map[cat_mixed.id] == 50.0  # 100 - 50 = 50
     assert stock_map[cat_pet.id] == 25.0
@@ -386,22 +461,39 @@ def test_sorting_process_mass_balance_and_residue(client, db_session):
 
 
 def test_waste_bank_savings_and_compensating_reversal(client, db_session):
-    staff_token, staff_user = _register(client, f"staff_bank_{uuid.uuid4().hex[:6]}@banksampah.bali", "Petugas Bank Sampah")
+    staff_token, staff_user = _register(
+        client, f"staff_bank_{uuid.uuid4().hex[:6]}@banksampah.bali", "Petugas Bank Sampah"
+    )
     _grant_role(db_session, staff_user["id"], "OPERATOR")
 
-    citizen_token, citizen_user = _register(client, f"nasabah_{uuid.uuid4().hex[:6]}@banjar.bali", "I Wayan Nasabah")
+    citizen_token, citizen_user = _register(
+        client, f"nasabah_{uuid.uuid4().hex[:6]}@banjar.bali", "I Wayan Nasabah"
+    )
 
     cat_karton = taxonomy_service.create_category(
         db_session,
-        WasteCategoryCreateRequest(code=f"KRT_{uuid.uuid4().hex[:4]}", name="Kardus Cokelat", category_type="RECYCLABLE", requires_special_handling=False),
+        WasteCategoryCreateRequest(
+            code=f"KRT_{uuid.uuid4().hex[:4]}",
+            name="Kardus Cokelat",
+            category_type="RECYCLABLE",
+            requires_special_handling=False,
+        ),
     )
 
-    admin_token, admin_user = _register(client, f"admin_bank_{uuid.uuid4().hex[:6]}@banksampah.bali", "Admin")
+    admin_token, admin_user = _register(
+        client, f"admin_bank_{uuid.uuid4().hex[:6]}@banksampah.bali", "Admin"
+    )
     _grant_role(db_session, admin_user["id"], "ADMIN")
     fac_resp = client.post(
         "/api/v1/facilities",
         headers={"Authorization": f"Bearer {admin_token}"},
-        json={"code": f"BS_{uuid.uuid4().hex[:6].upper()}", "name": "Bank Sampah Banjar Kaja", "facility_type": "BANK_SAMPAH", "address": "Banjar Kaja", "capacity_kg_per_day": 1000.0},
+        json={
+            "code": f"BS_{uuid.uuid4().hex[:6].upper()}",
+            "name": "Bank Sampah Banjar Kaja",
+            "facility_type": "BANK_SAMPAH",
+            "address": "Banjar Kaja",
+            "capacity_kg_per_day": 1000.0,
+        },
     )
     facility_id = fac_resp.json()["id"]
 
@@ -420,7 +512,13 @@ def test_waste_bank_savings_and_compensating_reversal(client, db_session):
     resp_dep = client.post(
         "/api/v1/facilities/waste-bank/deposit",
         headers={"Authorization": f"Bearer {staff_token}"},
-        json={"member_id": member_id, "category_id": cat_karton.id, "weight_kg": 10.0, "unit_price_idr": 2500, "notes": "Setoran kardus bersih"},
+        json={
+            "member_id": member_id,
+            "category_id": cat_karton.id,
+            "weight_kg": 10.0,
+            "unit_price_idr": 2500,
+            "notes": "Setoran kardus bersih",
+        },
     )
     assert resp_dep.status_code == 201
     tx_dep = resp_dep.json()
@@ -431,7 +529,12 @@ def test_waste_bank_savings_and_compensating_reversal(client, db_session):
     resp_dep2 = client.post(
         "/api/v1/facilities/waste-bank/deposit",
         headers={"Authorization": f"Bearer {staff_token}"},
-        json={"member_id": member_id, "category_id": cat_karton.id, "weight_kg": 5.0, "unit_price_idr": 2500},
+        json={
+            "member_id": member_id,
+            "category_id": cat_karton.id,
+            "weight_kg": 5.0,
+            "unit_price_idr": 2500,
+        },
     )
     assert resp_dep2.status_code == 201
     tx_dep2 = resp_dep2.json()

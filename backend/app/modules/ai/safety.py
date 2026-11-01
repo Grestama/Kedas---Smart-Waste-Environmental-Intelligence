@@ -52,8 +52,12 @@ def sanitize_retrieved_context(context: str) -> str:
         return ""
 
     # Strip dangerous HTML/script tags
-    sanitized = re.sub(r"<\s*script[^>]*>.*?<\s*/\s*script\s*>", "", context, flags=re.DOTALL | re.IGNORECASE)
-    sanitized = re.sub(r"<\s*iframe[^>]*>.*?<\s*/\s*iframe\s*>", "", sanitized, flags=re.DOTALL | re.IGNORECASE)
+    sanitized = re.sub(
+        r"<\s*script[^>]*>.*?<\s*/\s*script\s*>", "", context, flags=re.DOTALL | re.IGNORECASE
+    )
+    sanitized = re.sub(
+        r"<\s*iframe[^>]*>.*?<\s*/\s*iframe\s*>", "", sanitized, flags=re.DOTALL | re.IGNORECASE
+    )
 
     # Neutralize prompt escape attempts within document chunks
     sanitized = sanitized.replace("```system", "'''system")

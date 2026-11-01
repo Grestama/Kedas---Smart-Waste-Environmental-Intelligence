@@ -62,7 +62,9 @@ def ingest_document(
 
         # Extract title from first line if available
         first_line = cleaned.split("\n", 1)[0].strip()
-        section_title = first_line[:100] if first_line.startswith(("#", "Pasal", "Bab", "SOP")) else None
+        section_title = (
+            first_line[:100] if first_line.startswith(("#", "Pasal", "Bab", "SOP")) else None
+        )
 
         token_est = len(cleaned.split())
         chunk = KnowledgeChunk(
@@ -177,17 +179,74 @@ def scoped_retrieve_chunks(
 
     # Score chunks by hybrid lexical + domain semantic weighting
     stopwords = {
-        "apakah", "bagaimana", "kapan", "dimana", "siapa", "mengapa", "dan", "atau",
-        "di", "ke", "dari", "ini", "itu", "yang", "untuk", "pada", "adalah", "bisa",
-        "hari", "apa", "dengan", "the", "a", "an", "is", "in", "to", "of", "and", "how", "what",
+        "apakah",
+        "bagaimana",
+        "kapan",
+        "dimana",
+        "siapa",
+        "mengapa",
+        "dan",
+        "atau",
+        "di",
+        "ke",
+        "dari",
+        "ini",
+        "itu",
+        "yang",
+        "untuk",
+        "pada",
+        "adalah",
+        "bisa",
+        "hari",
+        "apa",
+        "dengan",
+        "the",
+        "a",
+        "an",
+        "is",
+        "in",
+        "to",
+        "of",
+        "and",
+        "how",
+        "what",
     }
     domain_boost_keywords = {
         # Waste categories & materials
-        "organik", "anorganik", "residu", "b3", "canang", "upakara", "tirta", "plastik",
-        "kaca", "kertas", "kardus", "logam", "medis", "limbah", "pilah", "daur", "kompos",
+        "organik",
+        "anorganik",
+        "residu",
+        "b3",
+        "canang",
+        "upakara",
+        "tirta",
+        "plastik",
+        "kaca",
+        "kertas",
+        "kardus",
+        "logam",
+        "medis",
+        "limbah",
+        "pilah",
+        "daur",
+        "kompos",
         # Governance, agreements, places & operations
-        "cdoa", "banjar", "prajuru", "awig", "pararem", "pergub", "aturan", "sanksi",
-        "jadwal", "penjemputan", "kapasitas", "tps3r", "sla", "eskalasi", "pos", "denda",
+        "cdoa",
+        "banjar",
+        "prajuru",
+        "awig",
+        "pararem",
+        "pergub",
+        "aturan",
+        "sanksi",
+        "jadwal",
+        "penjemputan",
+        "kapasitas",
+        "tps3r",
+        "sla",
+        "eskalasi",
+        "pos",
+        "denda",
     }
 
     clean_query = query.lower()
@@ -220,7 +279,7 @@ def scoped_retrieve_chunks(
         phrase_bonus = 0.0
         q_words = [w for w in re.findall(r"\w+", clean_query) if len(w) > 2]
         for i in range(len(q_words) - 1):
-            bigram = f"{q_words[i]} {q_words[i+1]}"
+            bigram = f"{q_words[i]} {q_words[i + 1]}"
             if bigram in content_lower:
                 phrase_bonus += 0.35
 
@@ -246,7 +305,6 @@ def scoped_retrieve_chunks(
     # Sort descending by score
     scored_results.sort(key=lambda x: x[2], reverse=True)
     return scored_results[:limit]
-
 
 
 def build_citations(

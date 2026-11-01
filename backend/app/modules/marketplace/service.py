@@ -235,9 +235,7 @@ def dispatch_delivery(
         raise NotFoundError("Batch material tidak ditemukan.")
 
     if batch.status not in [BatchStatus.BATCHED.value, BatchStatus.ALLOCATED.value]:
-        raise ValidationError(
-            f"Batch material dengan status '{batch.status}' tidak dapat dikirim."
-        )
+        raise ValidationError(f"Batch material dengan status '{batch.status}' tidak dapat dikirim.")
 
     if req.dispatched_weight_kg > float(batch.total_weight_kg):
         raise ValidationError(
@@ -568,13 +566,19 @@ def record_organic_processing_completion(
     request_id: str | None = None,
 ) -> OrganicProcessingRecord:
     """Record completion of organic processing with actual compost/larvae output and residue."""
-    stmt = select(OrganicProcessingRecord).where(OrganicProcessingRecord.id == record_id).with_for_update()
+    stmt = (
+        select(OrganicProcessingRecord)
+        .where(OrganicProcessingRecord.id == record_id)
+        .with_for_update()
+    )
     record = db.scalar(stmt)
     if not record:
         raise NotFoundError("Catatan pengolahan organik tidak ditemukan.")
 
     if record.status != OrganicStatus.IN_PROGRESS.value:
-        raise ValidationError(f"Proses dalam status '{record.status}' tidak dapat diselesaikan lagi.")
+        raise ValidationError(
+            f"Proses dalam status '{record.status}' tidak dapat diselesaikan lagi."
+        )
 
     record.output_product_weight_kg = req.output_product_weight_kg
     record.residue_weight_kg = req.residue_weight_kg
@@ -622,7 +626,9 @@ def check_b2b_user_access(db: Session, user: User, organization_id: str) -> None
     )
     member = db.scalar(stmt)
     if not member:
-        raise AuthorizationError("Akses ditolak: Anda tidak memiliki akses ke data organisasi usaha ini.")
+        raise AuthorizationError(
+            "Akses ditolak: Anda tidak memiliki akses ke data organisasi usaha ini."
+        )
 
 
 def create_b2b_organization(
@@ -790,14 +796,18 @@ def get_b2b_operational_report(
     cancelled = sum(1 for p in pickups if p.status == B2BPickupStatus.CANCELLED.value)
 
     total_est = sum(float(p.estimated_weight_kg or 0.0) for p in pickups)
-    total_act = sum(float(p.actual_weight_kg or 0.0) for p in pickups if p.actual_weight_kg is not None)
+    total_act = sum(
+        float(p.actual_weight_kg or 0.0) for p in pickups if p.actual_weight_kg is not None
+    )
 
     # Category breakdown
     cat_breakdown: dict[str, float] = {}
     for p in pickups:
         cat = db.get(WasteCategory, p.category_id)
         cat_name = cat.name if cat else "Lainnya"
-        wt = float(p.actual_weight_kg if p.actual_weight_kg is not None else p.estimated_weight_kg or 0.0)
+        wt = float(
+            p.actual_weight_kg if p.actual_weight_kg is not None else p.estimated_weight_kg or 0.0
+        )
         cat_breakdown[cat_name] = round(cat_breakdown.get(cat_name, 0.0) + wt, 3)
 
     loop_rate = round((processed / len(pickups) * 100.0), 1) if pickups else 0.0

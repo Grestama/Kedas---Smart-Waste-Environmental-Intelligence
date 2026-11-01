@@ -53,7 +53,10 @@ class KnowledgeDocument(Base, TimestampMixin):
         String(36), ForeignKey("service_areas.id", ondelete="SET NULL"), nullable=True, index=True
     )
     organization_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("b2b_organizations.id", ondelete="SET NULL"), nullable=True, index=True
+        String(36),
+        ForeignKey("b2b_organizations.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     cdoa_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("cdoa_agreements.id", ondelete="SET NULL"), nullable=True, index=True
@@ -80,7 +83,10 @@ class KnowledgeChunk(Base, TimestampMixin):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     document_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("knowledge_documents.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("knowledge_documents.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     section_title: Mapped[str | None] = mapped_column(String(255), nullable=True)

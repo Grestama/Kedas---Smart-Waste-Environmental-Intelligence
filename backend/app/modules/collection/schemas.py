@@ -173,9 +173,7 @@ class WastePassportPublicResponse(BaseModel):
     actual_weight_kg: float | None = None
     destination_facility_name: str | None = None
     timeline: list[WastePassportEventItem] = Field(default_factory=list)
-    public_verification_notice: str = (
-        "Kedas Waste Passport terverifikasi resmi. Informasi aman dan melindungi data pribadi warga."
-    )
+    public_verification_notice: str = "Kedas Waste Passport terverifikasi resmi. Informasi aman dan melindungi data pribadi warga."
 
 
 class WastePassportDetailResponse(WastePassportPublicResponse):
@@ -183,5 +181,3 @@ class WastePassportDetailResponse(WastePassportPublicResponse):
     address_label: str
     assigned_collector_name: str | None = None
     cancellation_reason: str | None = None
-
-

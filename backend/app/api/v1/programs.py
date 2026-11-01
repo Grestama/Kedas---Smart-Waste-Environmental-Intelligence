@@ -54,9 +54,7 @@ async def list_programs(
     program_type: str | None = None,
     status: str | None = None,
 ) -> list[ProgramResponse]:
-    programs = funding_service.list_funding_programs(
-        db, program_type=program_type, status=status
-    )
+    programs = funding_service.list_funding_programs(db, program_type=program_type, status=status)
     return [ProgramResponse.model_validate(p) for p in programs]
 
 

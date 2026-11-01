@@ -35,8 +35,12 @@ def upgrade() -> None:
         sa.Column("primary_facility_id", sa.String(length=36), nullable=True),
         sa.Column("collection_schedule_notes", sa.Text(), nullable=True),
         sa.Column("capacity_limit_daily_kg", sa.Float(), nullable=False, server_default="500.0"),
-        sa.Column("pic_name", sa.String(length=100), nullable=False, server_default="Prajuru Banjar"),
-        sa.Column("pic_contact", sa.String(length=50), nullable=False, server_default="08123456789"),
+        sa.Column(
+            "pic_name", sa.String(length=100), nullable=False, server_default="Prajuru Banjar"
+        ),
+        sa.Column(
+            "pic_contact", sa.String(length=50), nullable=False, server_default="08123456789"
+        ),
         sa.Column(
             "escalation_channel",
             sa.String(length=100),

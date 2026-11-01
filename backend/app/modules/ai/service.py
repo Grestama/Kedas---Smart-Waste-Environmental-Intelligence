@@ -52,20 +52,80 @@ def query_ecoguide(
     is_english = req.user_language == "en" or any(
         w in q_lower.split()
         for w in [
-            "how", "what", "where", "when", "can", "is", "schedule", "waste", "trash",
-            "plastic", "organic", "pickup", "sorting", "recycle", "hotel", "villa", "rubbish"
+            "how",
+            "what",
+            "where",
+            "when",
+            "can",
+            "is",
+            "schedule",
+            "waste",
+            "trash",
+            "plastic",
+            "organic",
+            "pickup",
+            "sorting",
+            "recycle",
+            "hotel",
+            "villa",
+            "rubbish",
         ]
     )
     lang = "en" if is_english else "id"
 
     # 2. Intent classification
-    if any(w in q_lower for w in ["jadwal", "kapan", "hari apa", "jam berapa", "schedule", "when", "time", "hours"]):
+    if any(
+        w in q_lower
+        for w in ["jadwal", "kapan", "hari apa", "jam berapa", "schedule", "when", "time", "hours"]
+    ):
         detected_intent = "SCHEDULE"
-    elif any(w in q_lower for w in ["pilah", "organik", "anorganik", "residu", "canang", "b3", "botol", "sort", "organic", "plastic", "diapers"]):
+    elif any(
+        w in q_lower
+        for w in [
+            "pilah",
+            "organik",
+            "anorganik",
+            "residu",
+            "canang",
+            "b3",
+            "botol",
+            "sort",
+            "organic",
+            "plastic",
+            "diapers",
+        ]
+    ):
         detected_intent = "SEGREGATION"
-    elif any(w in q_lower for w in ["lokasi", "dimana", "tps3r", "pos", "tempat", "facility", "where", "station", "drop-off"]):
+    elif any(
+        w in q_lower
+        for w in [
+            "lokasi",
+            "dimana",
+            "tps3r",
+            "pos",
+            "tempat",
+            "facility",
+            "where",
+            "station",
+            "drop-off",
+        ]
+    ):
         detected_intent = "FACILITY"
-    elif any(w in q_lower for w in ["sanksi", "denda", "awig", "pararem", "cdoa", "aturan", "peraturan", "fine", "rule", "penalty"]):
+    elif any(
+        w in q_lower
+        for w in [
+            "sanksi",
+            "denda",
+            "awig",
+            "pararem",
+            "cdoa",
+            "aturan",
+            "peraturan",
+            "fine",
+            "rule",
+            "penalty",
+        ]
+    ):
         detected_intent = "GOVERNANCE"
     else:
         detected_intent = "GENERAL_EDUCATION"
@@ -174,7 +234,9 @@ def query_ecoguide(
                 if lang == "en"
                 else "Periksa direktori layanan kawasan atau tanyakan kepada Kelian Banjar / Petugas TPS3R."
             )
-            contact_channel = contact_channel or ("Banjar Office / Local Host" if lang == "en" else "Sekretariat Banjar Adat Setempat")
+            contact_channel = contact_channel or (
+                "Banjar Office / Local Host" if lang == "en" else "Sekretariat Banjar Adat Setempat"
+            )
             final_answer = (
                 f"We apologize, but specific rules regarding this inquiry have not been recorded in the verified documents for {dest_name or 'the selected area'}. "
                 "To prevent improper waste handling or local adat fine violations, please consult the local Banjar office or your hotel concierge."
@@ -251,7 +313,6 @@ def query_ecoguide(
     )
 
 
-
 def record_feedback(
     db: Session,
     log_id: str,
@@ -271,12 +332,13 @@ def record_feedback(
     return True
 
 
-
 def strip_image_metadata(image_bytes: bytes, mime_type: str) -> bytes:
     """Strip EXIF, GPS location, and camera metadata to protect tourist & citizen privacy."""
     try:
-        from PIL import Image
         import io
+
+        from PIL import Image
+
         img = Image.open(io.BytesIO(image_bytes))
         data = list(img.getdata())
         image_without_exif = Image.new(img.mode, img.size)
@@ -310,19 +372,25 @@ def analyze_material_image(
 
     valid_mimes = ["image/jpeg", "image/png", "image/webp"]
     if mime_type.lower() not in valid_mimes:
-        raise ValidationError(f"Format gambar tidak didukung: {mime_type}. Gunakan JPEG, PNG, atau WEBP.")
+        raise ValidationError(
+            f"Format gambar tidak didukung: {mime_type}. Gunakan JPEG, PNG, atau WEBP."
+        )
 
     # Strip EXIF, GPS and device metadata for tourist and citizen privacy
     sanitized_bytes = strip_image_metadata(image_bytes, mime_type)
 
     # 2. Fetch active taxonomy categories
-    categories = list(db.scalars(select(WasteCategory).where(WasteCategory.is_active.is_(True))).all())
+    categories = list(
+        db.scalars(select(WasteCategory).where(WasteCategory.is_active.is_(True))).all()
+    )
     known_cats = [
         {
             "code": c.code,
             "name": c.name,
             "category_type": c.category_type,
-            "handling_instructions": c.preparation_guide or c.description or "Bersihkan dan keringkan sebelum dipilah.",
+            "handling_instructions": c.preparation_guide
+            or c.description
+            or "Bersihkan dan keringkan sebelum dipilah.",
         }
         for c in categories
     ]
@@ -406,10 +474,12 @@ def query_operations_copilot(
             db.scalars(
                 select(PickupRequest)
                 .where(
-                    PickupRequest.status.in_([
-                        PickupStatus.SUBMITTED.value,
-                        PickupStatus.PENDING_ASSIGNMENT.value,
-                    ])
+                    PickupRequest.status.in_(
+                        [
+                            PickupStatus.SUBMITTED.value,
+                            PickupStatus.PENDING_ASSIGNMENT.value,
+                        ]
+                    )
                 )
                 .order_by(PickupRequest.created_at.asc())
                 .limit(5)
@@ -536,7 +606,6 @@ def query_operations_copilot(
         else:
             summary = "Konsistensi neraca massa seluruh fasilitas normal. Tidak ditemukan anomali timbangan di atas batas toleransi."
 
-
     else:
         summary = "Pemeriksaan operasional kawasan selesai. Seluruh batasan deterministik terpantau normal."
 
@@ -575,6 +644,7 @@ def execute_action_proposal(
     Executes domain mutation and commits audited intervention log.
     """
     from datetime import UTC, datetime
+
     from app.db.base import AuditLog
 
     prop = req.proposal
@@ -588,10 +658,16 @@ def execute_action_proposal(
         if target_id:
             pickup = db.get(PickupRequest, target_id)
             if pickup:
-                before_state = {"status": pickup.status, "assigned_to": pickup.assigned_to}
-                pickup.status = PickupStatus.ASSIGNED.value
-                pickup.assigned_to = actor.id
-                after_state = {"status": pickup.status, "assigned_to": pickup.assigned_to}
+                before_state = {
+                    "status": pickup.status,
+                    "assigned_collector_id": pickup.assigned_collector_id,
+                }
+                pickup.status = PickupStatus.ACCEPTED.value
+                pickup.assigned_collector_id = actor.id
+                after_state = {
+                    "status": pickup.status,
+                    "assigned_collector_id": pickup.assigned_collector_id,
+                }
                 message = f"Tugas penjemputan tiket {pickup.public_code} berhasil ditugaskan."
             else:
                 before_state = {"status": "NOT_FOUND"}
@@ -650,4 +726,3 @@ def execute_action_proposal(
         after_state=after_state,
         executed_at=datetime.now(UTC),
     )
-

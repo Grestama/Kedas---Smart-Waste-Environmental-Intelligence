@@ -187,7 +187,9 @@ def test_cdoa_lifecycle_and_service_directory(client, db_session):
 
     # Approve & Publish V2
     client.post(f"/api/v1/community/cdoa/{cdoa2['id']}/approve", headers=admin_headers, json={})
-    resp_pub2 = client.post(f"/api/v1/community/cdoa/{cdoa2['id']}/publish", headers=admin_headers, json={})
+    resp_pub2 = client.post(
+        f"/api/v1/community/cdoa/{cdoa2['id']}/publish", headers=admin_headers, json={}
+    )
     assert resp_pub2.status_code == 200
     assert resp_pub2.json()["status"] == "PUBLISHED"
 

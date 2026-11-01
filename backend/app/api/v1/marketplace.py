@@ -88,7 +88,9 @@ async def list_partners(
     verified_only: bool = True,
     partner_type: str | None = None,
 ) -> list[PartnerResponse]:
-    partners = marketplace_service.list_partners(db, verified_only=verified_only, partner_type=partner_type)
+    partners = marketplace_service.list_partners(
+        db, verified_only=verified_only, partner_type=partner_type
+    )
     return [PartnerResponse.model_validate(p) for p in partners]
 
 
@@ -331,7 +333,9 @@ async def list_b2b_locations(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
 ) -> list[B2BLocationResponse]:
-    locations = marketplace_service.list_b2b_locations(db, organization_id=id, current_user=current_user)
+    locations = marketplace_service.list_b2b_locations(
+        db, organization_id=id, current_user=current_user
+    )
     return [B2BLocationResponse.model_validate(loc) for loc in locations]
 
 
@@ -361,7 +365,9 @@ async def update_b2b_pickup_status(
     current_user: Annotated[User, Depends(require_operator)],
     db: Annotated[Session, Depends(get_db_session)],
 ) -> B2BPickupResponse:
-    pickup = marketplace_service.update_b2b_pickup_status(db, pickup_id=id, req=req, current_user=current_user)
+    pickup = marketplace_service.update_b2b_pickup_status(
+        db, pickup_id=id, req=req, current_user=current_user
+    )
     return B2BPickupResponse.model_validate(pickup)
 
 
@@ -375,5 +381,7 @@ async def get_b2b_report(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db_session)],
 ) -> B2BOperationalReportResponse:
-    report = marketplace_service.get_b2b_operational_report(db, organization_id=id, current_user=current_user)
+    report = marketplace_service.get_b2b_operational_report(
+        db, organization_id=id, current_user=current_user
+    )
     return B2BOperationalReportResponse.model_validate(report)

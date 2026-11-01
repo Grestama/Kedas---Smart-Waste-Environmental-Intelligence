@@ -103,7 +103,6 @@ async def execute_copilot_proposal(
     return ai_service.execute_action_proposal(db, req=req, actor=actor)
 
 
-
 @router.post(
     "/knowledge",
     response_model=KnowledgeDocumentResponse,
@@ -197,8 +196,6 @@ async def submit_ai_feedback(
         success=True,
         message="Terima kasih, umpan balik Anda berhasil dicatat untuk evaluasi kualitas Kedas AI.",
     )
-
-
 
 
 @router.get(

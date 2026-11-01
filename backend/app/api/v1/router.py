@@ -70,7 +70,9 @@ api_v1_router.include_router(marketplace_router, tags=["Marketplace & Deliveries
 api_v1_router.include_router(notifications_router, tags=["Notifications"])
 
 # --- Phase 4: Facility Reception, Sorting & Bank Sampah ---
-api_v1_router.include_router(facility_router, prefix="/facilities", tags=["Facilities & Bank Sampah"])
+api_v1_router.include_router(
+    facility_router, prefix="/facilities", tags=["Facilities & Bank Sampah"]
+)
 
 # --- Phase 4: Admin Operations, Reporting, and Audit ---
 api_v1_router.include_router(admin_ops_router)
@@ -83,4 +85,3 @@ api_v1_router.include_router(community_router)
 
 # --- AI Web Innovation: EcoGuide, Vision & Operations Copilot ---
 api_v1_router.include_router(ai_router)
-

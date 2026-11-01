@@ -80,7 +80,10 @@ class ProgramSponsorship(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     program_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("funding_programs.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("funding_programs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     sponsor_name: Mapped[str] = mapped_column(String(150), nullable=False)
     sponsor_type: Mapped[str] = mapped_column(
@@ -106,7 +109,10 @@ class ProgramBudgetAllocation(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     program_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("funding_programs.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("funding_programs.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     service_area_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("service_areas.id", ondelete="CASCADE"), nullable=False, index=True

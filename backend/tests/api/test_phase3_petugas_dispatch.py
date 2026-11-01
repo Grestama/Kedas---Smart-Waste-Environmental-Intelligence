@@ -71,7 +71,11 @@ def _setup_pickup(client, db_session, citizen_token):
 
     addr_resp = client.post(
         "/api/v1/me/addresses",
-        json={"label": "Rumah", "address_text": "Jl. Raya Batuan No. 10", "service_area_id": area.id},
+        json={
+            "label": "Rumah",
+            "address_text": "Jl. Raya Batuan No. 10",
+            "service_area_id": area.id,
+        },
         headers=headers_citizen,
     )
     addr_id = addr_resp.json()["id"]
@@ -197,8 +201,12 @@ def test_field_failure_transition_requires_mandatory_reason_and_releases_slot(cl
     assert slot.booked_capacity == 1
 
     client.post(f"/api/v1/collector/tasks/{pickup_id}/accept", headers=headers)
-    client.post(f"/api/v1/collector/tasks/{pickup_id}/status", json={"status": "EN_ROUTE"}, headers=headers)
-    client.post(f"/api/v1/collector/tasks/{pickup_id}/status", json={"status": "ARRIVED"}, headers=headers)
+    client.post(
+        f"/api/v1/collector/tasks/{pickup_id}/status", json={"status": "EN_ROUTE"}, headers=headers
+    )
+    client.post(
+        f"/api/v1/collector/tasks/{pickup_id}/status", json={"status": "ARRIVED"}, headers=headers
+    )
 
     # 1. Attempt cancel without reason -> 422
     resp_no_reason = client.post(
@@ -280,8 +288,16 @@ def test_end_to_end_inspection_weighing_and_reward_ledger(client, db_session):
 
     # 1. Claim & arrive
     client.post(f"/api/v1/collector/tasks/{pickup_id}/accept", headers=headers_col)
-    client.post(f"/api/v1/collector/tasks/{pickup_id}/status", json={"status": "EN_ROUTE"}, headers=headers_col)
-    client.post(f"/api/v1/collector/tasks/{pickup_id}/status", json={"status": "ARRIVED"}, headers=headers_col)
+    client.post(
+        f"/api/v1/collector/tasks/{pickup_id}/status",
+        json={"status": "EN_ROUTE"},
+        headers=headers_col,
+    )
+    client.post(
+        f"/api/v1/collector/tasks/{pickup_id}/status",
+        json={"status": "ARRIVED"},
+        headers=headers_col,
+    )
 
     # 2. QC Inspection (Accepted)
     insp_resp = client.post(
@@ -333,8 +349,16 @@ def test_weighing_correction_adjusts_ledger_cleanly(client, db_session):
     pickup_id = pickup_data["id"]
 
     client.post(f"/api/v1/collector/tasks/{pickup_id}/accept", headers=headers_col)
-    client.post(f"/api/v1/collector/tasks/{pickup_id}/status", json={"status": "EN_ROUTE"}, headers=headers_col)
-    client.post(f"/api/v1/collector/tasks/{pickup_id}/status", json={"status": "ARRIVED"}, headers=headers_col)
+    client.post(
+        f"/api/v1/collector/tasks/{pickup_id}/status",
+        json={"status": "EN_ROUTE"},
+        headers=headers_col,
+    )
+    client.post(
+        f"/api/v1/collector/tasks/{pickup_id}/status",
+        json={"status": "ARRIVED"},
+        headers=headers_col,
+    )
     client.post(
         f"/api/v1/pickup-requests/{pickup_id}/inspections",
         json={"result": "ACCEPTED", "contamination_level": "NONE"},

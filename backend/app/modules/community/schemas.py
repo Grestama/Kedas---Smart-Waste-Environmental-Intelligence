@@ -257,9 +257,7 @@ class HazardousManifestResponse(BaseModel):
 class CDOACreateRequest(BaseModel):
     service_area_id: str
     title: str = Field(min_length=3, max_length=200)
-    eligible_source_types: str = Field(
-        default="HOUSEHOLD,HOREKA,COMMUNITY_EVENT", max_length=255
-    )
+    eligible_source_types: str = Field(default="HOUSEHOLD,HOREKA,COMMUNITY_EVENT", max_length=255)
     accepted_category_ids: list[str] = Field(default_factory=list)
     primary_facility_id: str | None = None
     collection_schedule_notes: str | None = None
@@ -358,5 +356,3 @@ class DCLIResponse(BaseModel):
         "operasional aktual. Indikator ini BUKAN sertifikasi lingkungan formal, audit kepatuhan hukum, "
         "atau klaim net-zero/carbon neutral."
     )
-
-

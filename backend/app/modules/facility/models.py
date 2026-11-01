@@ -66,21 +66,31 @@ class Facility(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    facility_type: Mapped[str] = mapped_column(String(50), nullable=False, default=FacilityType.TPS3R.value)
+    facility_type: Mapped[str] = mapped_column(
+        String(50), nullable=False, default=FacilityType.TPS3R.value
+    )
     service_area_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("service_areas.id", ondelete="SET NULL"), nullable=True, index=True
     )
     address: Mapped[str] = mapped_column(Text, nullable=False)
-    capacity_kg_per_day: Mapped[float] = mapped_column(Numeric(10, 2), default=2000.0, nullable=False)
+    capacity_kg_per_day: Mapped[float] = mapped_column(
+        Numeric(10, 2), default=2000.0, nullable=False
+    )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
 
     # Relationships
-    receipts: Mapped[list[FacilityReceipt]] = relationship("FacilityReceipt", back_populates="facility")
-    movements: Mapped[list[StockMovement]] = relationship("StockMovement", back_populates="facility")
-    waste_bank_members: Mapped[list[WasteBankMember]] = relationship("WasteBankMember", back_populates="facility")
+    receipts: Mapped[list[FacilityReceipt]] = relationship(
+        "FacilityReceipt", back_populates="facility"
+    )
+    movements: Mapped[list[StockMovement]] = relationship(
+        "StockMovement", back_populates="facility"
+    )
+    waste_bank_members: Mapped[list[WasteBankMember]] = relationship(
+        "WasteBankMember", back_populates="facility"
+    )
 
 
 class FacilityReceipt(Base):
@@ -97,7 +107,10 @@ class FacilityReceipt(Base):
         String(36), ForeignKey("pickup_requests.id", ondelete="SET NULL"), nullable=True, index=True
     )
     category_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("waste_categories.id", ondelete="RESTRICT"), nullable=False, index=True
+        String(36),
+        ForeignKey("waste_categories.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     receiver_user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
@@ -110,9 +123,13 @@ class FacilityReceipt(Base):
     received_weight_kg: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False)
     discrepancy_kg: Mapped[float] = mapped_column(Numeric(10, 3), default=0.0, nullable=False)
     discrepancy_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
-    quality_grade: Mapped[str] = mapped_column(String(32), default=QualityGrade.GRADE_A.value, nullable=False)
+    quality_grade: Mapped[str] = mapped_column(
+        String(32), default=QualityGrade.GRADE_A.value, nullable=False
+    )
     contamination_percent: Mapped[float] = mapped_column(Numeric(5, 2), default=0.0, nullable=False)
-    receipt_status: Mapped[str] = mapped_column(String(32), default=ReceiptStatus.ACCEPTED.value, nullable=False, index=True)
+    receipt_status: Mapped[str] = mapped_column(
+        String(32), default=ReceiptStatus.ACCEPTED.value, nullable=False, index=True
+    )
     idempotency_key: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -133,10 +150,16 @@ class StockMovement(Base):
         String(36), ForeignKey("facilities.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     category_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("waste_categories.id", ondelete="RESTRICT"), nullable=False, index=True
+        String(36),
+        ForeignKey("waste_categories.id", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
     )
     batch_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("material_batches.id", ondelete="SET NULL"), nullable=True, index=True
+        String(36),
+        ForeignKey("material_batches.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     movement_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     quantity_kg: Mapped[float] = mapped_column(Numeric(10, 3), nullable=False)
@@ -187,10 +210,16 @@ class WasteBankTransaction(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     transaction_no: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
     member_id: Mapped[str] = mapped_column(
-        String(36), ForeignKey("waste_bank_members.id", ondelete="CASCADE"), nullable=False, index=True
+        String(36),
+        ForeignKey("waste_bank_members.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     category_id: Mapped[str | None] = mapped_column(
-        String(36), ForeignKey("waste_categories.id", ondelete="SET NULL"), nullable=True, index=True
+        String(36),
+        ForeignKey("waste_categories.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     transaction_type: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     weight_kg: Mapped[float | None] = mapped_column(Numeric(10, 3), nullable=True)

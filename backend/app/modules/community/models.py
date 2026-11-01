@@ -187,9 +187,7 @@ class CleanupAction(Base):
     event_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_hours: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False, default=2.0)
     volunteer_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    total_collected_weight_kg: Mapped[float] = mapped_column(
-        Float, nullable=False, default=0.0
-    )
+    total_collected_weight_kg: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     plastic_weight_kg: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     organic_weight_kg: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     residual_weight_kg: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
@@ -300,7 +298,9 @@ class CDOAAgreement(Base):
     approved_by: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    approval_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    approval_timestamp: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
@@ -310,4 +310,3 @@ class CDOAAgreement(Base):
         onupdate=lambda: datetime.now(UTC),
         nullable=False,
     )
-
