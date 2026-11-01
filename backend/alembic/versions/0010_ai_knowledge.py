@@ -1,7 +1,7 @@
 """Phase AI — Kedas Knowledge Documents, Chunks, and AI Interaction Logs.
 
-Revision ID: 0010_ai_knowledge_and_interactions
-Revises: 0009_cdoa_and_destination_agreements
+Revision ID: 0010_ai_knowledge
+Revises: 0009_cdoa_agreements
 Create Date: 2026-10-30 14:15:00
 """
 
@@ -10,8 +10,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0010_ai_knowledge_and_interactions"
-down_revision: str | None = "0009_cdoa_and_destination_agreements"
+revision: str = "0010_ai_knowledge"
+down_revision: str | None = "0009_cdoa_agreements"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,6 +1,6 @@
 """Phase 2 — Pickup Idempotency Key and Service Mode.
 
-Revision ID: 0005_pickup_idempotency_and_service_mode
+Revision ID: 0005_pickup_idempotency
 Revises: 0004_notification_outbox
 Create Date: 2026-10-30 07:00:00
 """
@@ -10,7 +10,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0005_pickup_idempotency_and_service_mode"
+revision: str = "0005_pickup_idempotency"
 down_revision: str | None = "0004_notification_outbox"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

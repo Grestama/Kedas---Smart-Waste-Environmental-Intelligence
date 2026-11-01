@@ -48,7 +48,7 @@ ignore = ["S101", "S104", "E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S105", "S106"]
-"alembic/*" = ["I001", "UP007", "UP035"]
+"alembic/*" = ["I001", "UP007", "UP035", "E402"]
 "app/cli/*" = ["T201", "T203", "E402", "S105", "F401", "I001", "F841"]
 
 [tool.mypy]

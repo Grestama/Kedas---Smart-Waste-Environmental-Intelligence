@@ -1,7 +1,7 @@
 """Phase 3 — Inspection, Weight, Evidence, WastePoints, Funding, and Marketplace.
 
-Revision ID: 0003
-Revises: 0002
+Revision ID: 0003_inspection_weight
+Revises: 0002_identity_taxonomy
 Create Date: 2026-10-29 13:07:00
 """
 
@@ -10,8 +10,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0003_inspection_weight_points_marketplace"
-down_revision: str | None = "0002_identity_taxonomy_collection"
+revision: str = "0003_inspection_weight"
+down_revision: str | None = "0002_identity_taxonomy"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

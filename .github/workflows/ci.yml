@@ -53,20 +53,25 @@ jobs:
         run: |
           mypy app
 
+      - name: Validate Alembic migration graph & constraints
+        run: |
+          pytest tests/unit/test_migration_integrity.py -v
+
       - name: Run Alembic migrations on clean DB
         env:
-          DATABASE_URL: postgresql://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
+          DATABASE_URL: postgresql+psycopg://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
           SESSION_SECRET_KEY: test_secret_key_minimum_32_chars_for_ci_environment
         run: |
           alembic upgrade head
+          alembic current
           alembic downgrade -1
           alembic upgrade head
 
       - name: Run tests with pytest & coverage
         env:
           APP_ENV: test
-          DATABASE_URL: postgresql://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
-          DATABASE_URL_TEST: postgresql://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
+          DATABASE_URL: postgresql+psycopg://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
+          DATABASE_URL_TEST: postgresql+psycopg://wastelink:wastelink_test_ci_password@localhost:5432/wastelink_test
           SESSION_SECRET_KEY: test_secret_key_minimum_32_chars_for_ci_environment
         run: |
           pytest --cov=app --cov-report=term-missing

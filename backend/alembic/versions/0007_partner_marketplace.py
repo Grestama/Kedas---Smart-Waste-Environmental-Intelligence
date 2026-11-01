@@ -1,7 +1,7 @@
 """Phase 5 — Material Partners, Marketplace Offers, Organic Processing & B2B.
 
-Revision ID: 0007_partner_marketplace_b2b_and_organic
-Revises: 0006_facility_receipts_stock_and_waste_bank
+Revision ID: 0007_partner_marketplace
+Revises: 0006_facility_receipts
 Create Date: 2026-10-30 08:30:00
 """
 
@@ -10,8 +10,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0007_partner_marketplace_b2b_and_organic"
-down_revision: str | None = "0006_facility_receipts_stock_and_waste_bank"
+revision: str = "0007_partner_marketplace"
+down_revision: str | None = "0006_facility_receipts"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

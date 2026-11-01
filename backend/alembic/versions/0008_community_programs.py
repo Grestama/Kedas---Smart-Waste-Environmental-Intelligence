@@ -1,7 +1,7 @@
 """Phase 6 — Community Banjar, Funding Programs, Clean-up Actions & Hazardous Waste.
 
-Revision ID: 0008_community_programs_funding_and_special_features
-Revises: 0007_partner_marketplace_b2b_and_organic
+Revision ID: 0008_community_programs
+Revises: 0007_partner_marketplace
 Create Date: 2026-10-30 08:35:00
 """
 
@@ -10,8 +10,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0008_community_programs_funding_and_special_features"
-down_revision: str | None = "0007_partner_marketplace_b2b_and_organic"
+revision: str = "0008_community_programs"
+down_revision: str | None = "0007_partner_marketplace"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,6 +1,6 @@
 """Create identity, taxonomy, service areas, slots, and pickup tables.
 
-Revision ID: 0002_identity_taxonomy_collection
+Revision ID: 0002_identity_taxonomy
 Revises: 0001_baseline_audit_log
 Create Date: 2026-10-29 13:00:00.000000
 
@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from alembic import op
 import sqlalchemy as sa
 
-revision: str = "0002_identity_taxonomy_collection"
+revision: str = "0002_identity_taxonomy"
 down_revision: str | None = "0001_baseline_audit_log"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

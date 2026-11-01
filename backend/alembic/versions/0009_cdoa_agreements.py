@@ -1,7 +1,7 @@
 """Phase 2 — Community Destination Operating Agreement (CDOA) & Destination Operations.
 
-Revision ID: 0009_cdoa_and_destination_agreements
-Revises: 0008_community_programs_funding_and_special_features
+Revision ID: 0009_cdoa_agreements
+Revises: 0008_community_programs
 Create Date: 2026-10-30 12:35:00
 """
 
@@ -10,8 +10,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision: str = "0009_cdoa_and_destination_agreements"
-down_revision: str | None = "0008_community_programs_funding_and_special_features"
+revision: str = "0009_cdoa_agreements"
+down_revision: str | None = "0008_community_programs"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
