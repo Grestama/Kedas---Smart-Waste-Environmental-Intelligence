@@ -140,7 +140,7 @@ def upgrade() -> None:
         sa.Column("user_id", sa.String(length=36), nullable=False),
         sa.Column("service_area_id", sa.String(length=36), nullable=False),
         sa.Column("official_title", sa.String(length=100), nullable=False),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="1"),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.true()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
             ["user_id"],

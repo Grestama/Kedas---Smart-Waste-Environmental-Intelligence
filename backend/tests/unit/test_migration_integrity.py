@@ -43,3 +43,40 @@ def test_alembic_revision_lengths_and_uniqueness():
     # 4. Single-head assertion
     heads = script_dir.get_heads()
     assert len(heads) == 1, f"Expected exactly 1 migration head, but found {len(heads)}: {heads}"
+
+
+def test_boolean_columns_use_dialect_agnostic_defaults():
+    """Ensure no Boolean column uses raw integer literals (0, 1) as server defaults.
+
+    PostgreSQL enforces strict boolean type checking (DatatypeMismatch error if 0 or 1 is used),
+    whereas SQLite tolerates integers. All migrations must use sa.true() or sa.false().
+    """
+    import glob
+
+    backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+    versions_dir = os.path.join(backend_dir, "alembic", "versions")
+    migration_files = glob.glob(os.path.join(versions_dir, "*.py"))
+
+    invalid_defaults = [
+        'server_default="0"',
+        'server_default="1"',
+        "server_default='0'",
+        "server_default='1'",
+        'server_default=sa.text("0")',
+        'server_default=sa.text("1")',
+        "server_default=sa.text('0')",
+        "server_default=sa.text('1')",
+    ]
+
+    for file_path in migration_files:
+        with open(file_path, encoding="utf-8") as f:
+            content = f.read()
+
+        for line_num, line in enumerate(content.splitlines(), start=1):
+            if "sa.Boolean()" in line:
+                for inv in invalid_defaults:
+                    assert inv not in line, (
+                        f"Found prohibited boolean server default '{inv}' in "
+                        f"{os.path.basename(file_path)}:{line_num}: {line.strip()}. "
+                        f"Use sa.false() or sa.true() for PostgreSQL & SQLite compatibility."
+                    )

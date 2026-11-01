@@ -354,7 +354,7 @@ def upgrade() -> None:
         sa.Column("body", sa.Text(), nullable=False),
         sa.Column("event_type", sa.String(length=50), nullable=False),
         sa.Column("reference_id", sa.String(length=36), nullable=True),
-        sa.Column("is_read", sa.Boolean(), nullable=False, server_default=sa.text("0")),
+        sa.Column("is_read", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.ForeignKeyConstraint(
             ["user_id"], ["users.id"], name="fk_notifications_user_id_users", ondelete="CASCADE"

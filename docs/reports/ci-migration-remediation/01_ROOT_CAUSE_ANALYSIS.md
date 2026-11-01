@@ -95,3 +95,29 @@ We adopt **Jalur A (Controlled Revision Identifier Normalization)** combined wit
    In `backend/alembic/env.py`, enhance the migration environment to support `VARCHAR(128)` for `version_num`, preventing future regressions if a contributor creates a long revision ID.
 3. **Layer 3: Automated Revision Length Quality Guard**
    Add an automated test to CI that inspects all migration files and asserts `len(revision) <= 32` and `len(down_revision) <= 32`.
+
+---
+
+## 4. Root Cause Analysis #2: Boolean DatatypeMismatch on PostgreSQL
+
+### 4.1 Incident Description
+Following the resolution of the `VARCHAR(32)` revision truncation, CI progressed through revisions `0001` and `0002` successfully, but failed at `0003_inspection_weight.py:349` (`CREATE TABLE notifications`) with:
+```text
+sqlalchemy.exc.ProgrammingError: (psycopg.errors.DatatypeMismatch) column "is_read" is of type boolean but default expression is of type integer
+HINT: You will need to rewrite or cast the expression.
+[SQL: ... is_read BOOLEAN DEFAULT 0 NOT NULL ...]
+```
+
+### 4.2 Technical Root Cause
+- **SQLite vs PostgreSQL Semantics:** In SQLite, `BOOLEAN` is an alias for `INTEGER`, so `server_default="0"`, `"1"`, or `sa.text("0")` executes without error. In PostgreSQL, `BOOLEAN` is a strict primitive type (`TRUE` / `FALSE`). Providing an integer literal (`0` or `1`) without casting fails type checking with `DatatypeMismatch`.
+- **Affected Columns Across Migrations:**
+  1. `0003_inspection_weight.py:357`: `notifications.is_read` (`server_default=sa.text("0")`)
+  2. `0008_community_programs.py:143`: `banjar_officials.is_active` (`server_default="1"`)
+  3. `0010_ai_knowledge.py:29`: `knowledge_documents.is_public` (`server_default="1"`)
+  4. `0010_ai_knowledge.py:84`: `ai_interaction_logs.fallback_used` (`server_default="0"`)
+
+### 4.3 Remediation Strategy
+Replaced all integer/text literals with dialect-agnostic SQLAlchemy constructs:
+- `server_default=sa.false()`
+- `server_default=sa.true()`
+Added an automated CI guard test in `backend/tests/unit/test_migration_integrity.py` (`test_boolean_columns_use_dialect_agnostic_defaults`) to block any future integer boolean defaults.

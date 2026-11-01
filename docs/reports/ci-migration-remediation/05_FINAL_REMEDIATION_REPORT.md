@@ -15,11 +15,12 @@
 | **Alembic Graph Continuity** | Failed on `0002` insert in PostgreSQL | **100% Continuous Single-Head Graph** | `alembic history` & `alembic heads` |
 | **Empty DB Migration** | FAILED (`StringDataRightTruncation`) | **PASSED** (clean DB upgrade & downgrade) | `test_postgres_migration_matrix.py` |
 | **Alembic Version Table** | Hardcoded VARCHAR(32) | **Hardened via hook in `env.py`** | `DefaultImpl.version_table_impl` |
+| **Boolean Server Defaults** | Integer literals (`0`, `1`, `text("0")`) | **Dialect-agnostic `sa.false()` / `sa.true()`** | `test_boolean_columns_use_dialect_agnostic_defaults` |
 | **Existing DB Compatibility** | Incompatible on PostgreSQL | **Compatible on both SQLite & PostgreSQL** | `wastelink.db` synced to `0010_ai_knowledge` |
 | **Automated Length Guard** | None (failed only at runtime in CI) | **Enforced in Pytest & CI Pre-step** | `test_migration_integrity.py` |
 | **Lint & Format Check** | Failed | **PASSED (136 files formatted, 0 errors)** | `ruff check .` & `ruff format --check .` |
 | **Typecheck (Mypy)** | Failed | **PASSED (84 source files, 0 errors)** | `mypy app` |
-| **Backend Unit & API Tests** | 87 tests | **90 tests PASSED** (0 failures) | `pytest tests/` |
+| **Backend Unit & API Tests** | 87 tests | **91 tests PASSED** (0 failures) | `pytest tests/` |
 | **Frontend Tests** | 126 tests | **126 tests PASSED** (0 failures) | `vitest run` |
 | **Frontend / Design Drift** | N/A | **ZERO changes (Design Freeze preserved)** | `git status` |
 
