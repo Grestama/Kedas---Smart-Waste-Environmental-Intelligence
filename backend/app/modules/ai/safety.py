@@ -7,16 +7,34 @@ import re
 # Signatures for prompt injection, jailbreaks, and system prompt override attempts
 INJECTION_PATTERNS = [
     re.compile(r"ignore\s+(all\s+)?(previous|prior)\s+(instructions|prompts|rules)", re.IGNORECASE),
+    re.compile(
+        r"(abaikan|lupakan|hiraukan)\s+(semua\s+)?(aturan|instruksi|perintah|sistem|guideline)",
+        re.IGNORECASE,
+    ),
     re.compile(r"system\s+prompt\s*(reveal|show|dump|print)", re.IGNORECASE),
-    re.compile(r"you\s+are\s+now\s+(dan|unrestricted|god\s+mode|jailbroken)", re.IGNORECASE),
+    re.compile(r"you\s+are\s+(now\s+)?(dan|unrestricted|god\s+mode|jailbroken)", re.IGNORECASE),
     re.compile(r"(sudo|root)\s+mode", re.IGNORECASE),
     re.compile(r"override\s+safety\s+guidelines", re.IGNORECASE),
-    re.compile(r"bypass\s+(authorization|rbac|filter)", re.IGNORECASE),
+    re.compile(
+        r"bypass\s+(authorization|rbac|filter|security(\s+check)?|censorship)", re.IGNORECASE
+    ),
+    re.compile(r"without\s+(censorship|restrictions|filters)", re.IGNORECASE),
     re.compile(r"execute\s+(sql|command|script|eval)", re.IGNORECASE),
     re.compile(r"delete\s+from\s+[a-z_]+", re.IGNORECASE),
     re.compile(r"drop\s+table", re.IGNORECASE),
     re.compile(r"(system\s*:|assistant\s*:|human\s*:)\s*", re.IGNORECASE),
     re.compile(r"reveal\s+(system\s+prompt|instructions|secret|api\s*key)", re.IGNORECASE),
+    re.compile(
+        r"(tampilkan|bocorkan|berikan|reveal|print|dump)\s+.*(database\s+)?(password|kata\s*sandi|kunci\s*rahasia|secret|api\s*key|credential|internal\s+system)",
+        re.IGNORECASE,
+    ),
+    re.compile(r"(database\s+password|kunci\s*rahasia\s*server)", re.IGNORECASE),
+    re.compile(
+        r"(tetapkan|buatkan|berikan)\s+(denda|sanksi)\s+(fiktif|palsu|bohong)", re.IGNORECASE
+    ),
+    re.compile(
+        r"(dump|dispose|throw)\s+(toxic|hazardous|radioactive)\s+waste\s+illegally", re.IGNORECASE
+    ),
     re.compile(r"\b(bomb|explosive|weapon)\b", re.IGNORECASE),
 ]
 

@@ -4,25 +4,44 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+import time
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.errors import NotFoundError, ValidationError
+from app.core.errors import (
+    AuthorizationError,
+    NotFoundError,
+    RateLimitError,
+    ValidationError,
+)
 from app.modules.account.models import User
 from app.modules.ai.adapter import ai_adapter
+from app.modules.ai.context_resolver import ContextResolver
 from app.modules.ai.knowledge import (
     build_citations,
-    scoped_retrieve_chunks,
     seed_default_knowledge_if_empty,
 )
-from app.modules.ai.models import AICapability, AIInteractionLog
+from app.modules.ai.models import (
+    AICapability,
+    AIConversation,
+    AIInteractionLog,
+    AIMessage,
+    KnowledgeDocument,
+)
+from app.modules.ai.retrieval import (
+    EvidenceStatus,
+    execute_hybrid_retrieval_and_gating,
+)
 from app.modules.ai.safety import check_prompt_injection, redact_pii
 from app.modules.ai.schemas import (
     ActionProposalExecuteRequest,
     ActionProposalExecuteResponse,
     ActionProposalPayload,
+    CitationSchema,
     CopilotQueryRequest,
     CopilotResponse,
     EcoGuideQueryRequest,
@@ -31,12 +50,37 @@ from app.modules.ai.schemas import (
     VisionAnalyzeResponse,
     VisionCandidateSchema,
 )
-from app.modules.collection.models import PickupRequest, PickupStatus, ServiceArea
+from app.modules.collection.models import PickupRequest, PickupStatus
 from app.modules.community.models import CDOAAgreement, CDOAStatus
 from app.modules.facility.models import Facility, FacilityReceipt
 from app.modules.taxonomy.models import WasteCategory
 
 logger = logging.getLogger("kedas.ai.service")
+
+
+_rate_limits: dict[str, list[float]] = {}
+
+
+def check_ai_rate_limit(actor_key: str, limit: int = 30, window_sec: float = 60.0) -> None:
+    """Enforce token bucket / sliding window rate limiting per actor or session."""
+    now = time.time()
+    timestamps = _rate_limits.setdefault(actor_key, [])
+    # Filter timestamps older than the sliding window
+    _rate_limits[actor_key] = [t for t in timestamps if now - t < window_sec]
+    if len(_rate_limits[actor_key]) >= limit:
+        raise RateLimitError(
+            "Batas frekuensi pertanyaan tercapai (rate limit). Silakan coba beberapa saat lagi."
+        )
+    _rate_limits[actor_key].append(now)
+
+
+def validate_and_prune_citations(
+    citations: list[CitationSchema],
+    valid_documents: list[KnowledgeDocument],
+) -> list[CitationSchema]:
+    """Prune any hallucinated citations whose source_id does not exist in candidate documents."""
+    valid_doc_ids = {d.id for d in valid_documents}
+    return [c for c in citations if c.source_id in valid_doc_ids]
 
 
 def query_ecoguide(
@@ -46,9 +90,44 @@ def query_ecoguide(
     is_public: bool = True,
 ) -> EcoGuideResponse:
     """Execute Kedas EcoGuide RAG query with destination scoping, multilingual support, and source citations."""
+    # 0. Rate limiting check
+    actor_key = user.id if user else (req.session_id or "anonymous_guest")
+    check_ai_rate_limit(actor_key, limit=60 if user else 20)
+
+    # 1. Resolve Server-Side Context & Authorization
+    server_ctx = ContextResolver.resolve(db, user, req.destination_id)
+    dest_name = server_ctx.scope.destination_name
+    cdoa_ver = server_ctx.scope.cdoa_version or "1.0"
+    contact_channel = server_ctx.scope.cdoa_escalation_channel
+    effective_dest_id = server_ctx.scope.destination_id
+    effective_org_id = server_ctx.scope.organization_id
+
+    # 2. Verify Conversation Ownership if conversation_id is provided
+    conversation: AIConversation | None = None
+    if req.conversation_id:
+        conversation = db.get(AIConversation, req.conversation_id)
+        if not conversation:
+            raise NotFoundError(f"Percakapan dengan ID '{req.conversation_id}' tidak ditemukan.")
+        if conversation.is_archived:
+            raise ValidationError(
+                "Percakapan ini telah diarsipkan dan tidak dapat menerima pesan baru."
+            )
+        if user:
+            if (
+                conversation.user_id
+                and conversation.user_id != user.id
+                and not server_ctx.actor.is_admin
+            ):
+                raise AuthorizationError(
+                    "Akses ditolak: Anda tidak memiliki akses ke percakapan ini."
+                )
+        else:
+            if conversation.user_id:
+                raise AuthorizationError("Akses ditolak: Percakapan ini memerlukan login.")
+
     q_lower = req.question.lower()
 
-    # 1. Detect language (id vs en)
+    # 3. Detect language (id vs en)
     is_english = req.user_language == "en" or any(
         w in q_lower.split()
         for w in [
@@ -73,7 +152,7 @@ def query_ecoguide(
     )
     lang = "en" if is_english else "id"
 
-    # 2. Intent classification
+    # 4. Intent classification
     if any(
         w in q_lower
         for w in ["jadwal", "kapan", "hari apa", "jam berapa", "schedule", "when", "time", "hours"]
@@ -130,7 +209,7 @@ def query_ecoguide(
     else:
         detected_intent = "GENERAL_EDUCATION"
 
-    # 3. Prompt Injection Filter
+    # 5. Prompt Injection Filter
     is_injected, injection_reason = check_prompt_injection(req.question)
     if is_injected:
         blocked_msg = (
@@ -149,50 +228,108 @@ def query_ecoguide(
             abstain_reason="Instruksi terlarang terdeteksi oleh sistem keamanan Kedas.",
         )
 
-    # 4. Destination Context Resolution
-    dest_name = None
-    cdoa_ver = "1.0"
-    contact_channel = None
-
-    if req.destination_id:
-        area = db.get(ServiceArea, req.destination_id)
-        if area:
-            dest_name = area.name
-            cdoa = db.scalar(
-                select(CDOAAgreement)
-                .where(
-                    CDOAAgreement.service_area_id == area.id,
-                    CDOAAgreement.status == CDOAStatus.PUBLISHED.value,
-                )
-                .order_by(CDOAAgreement.created_at.desc())
+    # 5b. Conversational Pleasantries & Gratitude Handler
+    gratitude_tokens = ["terima kasih", "makasih", "suksma", "matur suksma", "thank you", "thanks"]
+    words_count = len(re.findall(r"\w+", q_lower))
+    if any(gt in q_lower for gt in gratitude_tokens) and words_count <= 8:
+        reply_text = (
+            "You are very welcome! EcoGuide is always glad to assist you with Bali's sustainable waste management. Let's keep Bali clean and green together (Tri Hita Karana)!"
+            if lang == "en"
+            else "Sama-sama! Senang dapat membantu Anda. Mari terus bersama-sama menjaga kebersihan dan kelestarian palemahan Bali sesuai prinsip Tri Hita Karana. Jangan ragu bertanya lagi jika butuh bantuan!"
+        )
+        if conversation:
+            user_msg = AIMessage(
+                conversation_id=conversation.id,
+                sender="user",
+                text=req.question,
+                provenance="USER",
+                status="SUBMITTED",
             )
-            if cdoa:
-                cdoa_ver = cdoa.agreement_no
-                contact_channel = cdoa.escalation_channel
+            bot_msg = AIMessage(
+                conversation_id=conversation.id,
+                sender="ai",
+                text=reply_text,
+                citations_json=json.dumps([]),
+                provenance="VERIFIED",
+                status="SUCCESS",
+            )
+            db.add_all([user_msg, bot_msg])
+            conversation.updated_at = datetime.now(UTC)
+            db.commit()
 
-    # 5. Scoped Retrieval from Knowledge Base
+        return EcoGuideResponse(
+            answer=reply_text,
+            status="SUCCESS",
+            confidence_level="HIGH",
+            provider=ai_adapter.provider_name,
+            fallback_used=False,
+            detected_intent=detected_intent,
+            language_used=lang,
+            suggested_next_step="Tanyakan jadwal atau panduan pemilahan lainnya jika diperlukan.",
+        )
+
+    # 6. Scoped Hybrid Retrieval & Evidence Gating from Knowledge Base
     admin_ref = user.id if user else "system_bootstrap"
     seed_default_knowledge_if_empty(db, admin_ref)
 
-    retrieved = scoped_retrieve_chunks(
+    # Multi-turn conversational query contextualization
+    retrieval_query = req.question
+    if conversation and conversation.messages:
+        anaphora_markers = [
+            "tersebut",
+            "itu",
+            "ini",
+            "tadi",
+            "dimaksud",
+            "the same",
+            "it",
+            "they",
+            "that",
+            "this",
+            "juga",
+            "biaya",
+            "retak",
+            "pecah",
+        ]
+        q_tokens = [w.strip("?,.!") for w in q_lower.split()]
+        if any(marker in q_tokens for marker in anaphora_markers) or len(q_tokens) <= 6:
+            user_prev = [m.text for m in conversation.messages if m.sender == "user"]
+            if user_prev:
+                retrieval_query = f"{user_prev[0]} {user_prev[-1]} {req.question}"
+
+    gated_result = execute_hybrid_retrieval_and_gating(
         db,
-        query=req.question,
-        destination_id=req.destination_id,
-        is_public_only=is_public,
+        query=retrieval_query,
+        destination_id=effective_dest_id,
+        organization_id=effective_org_id,
+        is_public_only=not server_ctx.actor.is_authenticated,
         limit=3,
     )
+    canonical_intent_map = {
+        "COLLECTION_SCHEDULE": "SCHEDULE",
+        "SORTING_GUIDE": "SORTING",
+        "DROP_OFF_LOCATION": "FACILITY",
+        "REGULATION_LEGAL": "GOVERNANCE",
+        "ADAT_SANCTION": "GOVERNANCE",
+        "SERVICE_INQUIRY": "FACILITY",
+        "GENERAL_EDUCATION": "GENERAL_EDUCATION",
+    }
+    detected_intent = canonical_intent_map.get(gated_result.intent.value, gated_result.intent.value)
 
-    # 6. Ambiguity or Missing Context Handling
+    # Extract retrieved chunks for citation building
+    retrieved = [(c.chunk, c.document, c.rrf_score) for c in gated_result.candidates]
+
+    # 7. Ambiguity or Missing Context Handling
     final_answer: str
     status: str
     citations = []
-    confidence_level: str = "HIGH"
+    confidence_level: str = "HIGH" if gated_result.status == EvidenceStatus.SUFFICIENT else "MEDIUM"
     abstain_reason: str | None = None
     suggested_action: str | None = None
     provider_name: str = ai_adapter.provider_name
     fallback_used: bool = False
 
-    if not retrieved:
+    if not retrieved or gated_result.status == EvidenceStatus.INSUFFICIENT:
         # If user asks about schedules without specifying a destination, provide helpful disambiguation
         if detected_intent == "SCHEDULE" and not req.destination_id:
             status = "SUCCESS"
@@ -248,7 +385,29 @@ def query_ecoguide(
             )
     else:
         # Build Citations & Synthesize Grounded Answer
-        citations = build_citations(retrieved)
+        valid_docs = [doc for _, doc, _ in retrieved]
+        raw_citations = build_citations(retrieved)
+        citations = validate_and_prune_citations(raw_citations, valid_docs)
+
+        # Multi-turn compact conversational memory
+        history_snippet = ""
+        if conversation and conversation.messages:
+            recent_turns = conversation.messages[-4:]
+            history_lines = [f"{m.sender.upper()}: {m.text[:150]}" for m in recent_turns]
+            history_snippet = "\n\nCONVERSATION HISTORY:\n" + "\n".join(history_lines)
+
+        actor_role = server_ctx.actor.actor_type
+        if actor_role == "GUEST":
+            role_tone = "Tone: Warm, welcoming, respectful of Balinese culture (Tri Hita Karana), clear and concise for tourists."
+        elif actor_role == "RESIDENT":
+            role_tone = "Tone: Actionable, community-centric, emphasizing Banjar schedules and WastePoints incentives."
+        elif actor_role == "COLLECTOR":
+            role_tone = "Tone: Direct, operationally focused on sorting criteria, logistics, and task safety."
+        elif actor_role == "BUSINESS":
+            role_tone = "Tone: Formal, compliance-oriented covering Pergub 97/2018, SLAs, and commercial waste manifests."
+        else:
+            role_tone = "Tone: Objective, authoritative, and helpful."
+
         context_text = "\n\n".join(
             f"[{c.source_id}] {c.title} ({c.section}): {c.excerpt}" for c in citations
         )
@@ -256,14 +415,16 @@ def query_ecoguide(
         if lang == "en":
             system_prompt = (
                 f"You are Kedas EcoGuide, an environmental intelligence assistant for destination: {dest_name or 'Bali Destination'}.\n"
+                f"{role_tone}\n"
                 f"Always respond in clear, welcoming, polite English for international visitors, hotels, and residents in Bali.\n"
-                f"Answer using ONLY the following verified context. Cite sources using [source_id].\n\n"
+                f"Answer using ONLY the following verified context. Cite sources using [source_id].{history_snippet}\n\n"
                 f"CONTEXT:\n{context_text}"
             )
         else:
             system_prompt = (
                 f"You are Kedas EcoGuide for destination: {dest_name or 'Kawasan Bali'}.\n"
-                f"Answer using ONLY the following verified context. Cite source IDs like [{citations[0].source_id}].\n\n"
+                f"{role_tone}\n"
+                f"Answer using ONLY the following verified context. Cite source IDs like [{citations[0].source_id}].{history_snippet}\n\n"
                 f"CONTEXT:\n{context_text}"
             )
 
@@ -277,12 +438,27 @@ def query_ecoguide(
         provider_name = ai_result["provider"]
         fallback_used = ai_result["fallback_used"]
 
-    # 7. Unified Audit & Interaction Logging
+    # 8. Claims, Limitations & Next Steps Extraction
+    claims: list[str] = []
+    limitations: list[str] = []
+    suggested_next_step: str | None = suggested_action
+
+    if status == "SUCCESS" and citations:
+        claims = [f"Rujukan resmi dari {c.title} ({c.section})" for c in citations[:3]]
+        limitations = [f"Ketentuan berlaku spesifik untuk kawasan {dest_name or 'Bali'}."]
+        if not suggested_next_step:
+            suggested_next_step = (
+                "Segregasikan sampah sesuai jenis dan simpan di wadah terpisah sebelum jadwal angkut."
+                if lang == "id"
+                else "Segregate waste by category and store in designated bins before scheduled pickup."
+            )
+
+    # 9. Unified Audit & Interaction Logging
     log_entry = AIInteractionLog(
         session_id=req.session_id,
         user_id=user.id if user else None,
         capability=AICapability.ECOGUIDE.value,
-        destination_id=req.destination_id,
+        destination_id=effective_dest_id,
         prompt_summary=redact_pii(req.question[:200]),
         response_summary=redact_pii(final_answer[:200]),
         citations_json=json.dumps([c.model_dump() for c in citations]),
@@ -292,6 +468,30 @@ def query_ecoguide(
         fallback_used=fallback_used,
     )
     db.add(log_entry)
+    db.flush()
+
+    # 10. Multi-Turn Conversation Thread Persistence
+    if conversation:
+        user_msg = AIMessage(
+            conversation_id=conversation.id,
+            sender="user",
+            text=req.question,
+            provenance="USER",
+            status="SUBMITTED",
+        )
+        ai_msg = AIMessage(
+            conversation_id=conversation.id,
+            sender="ai",
+            text=final_answer,
+            citations_json=json.dumps([c.model_dump() for c in citations]),
+            provenance="VERIFIED" if status == "SUCCESS" else "ESTIMATED",
+            status=status,
+            abstain_reason=abstain_reason,
+            log_id=log_entry.id,
+        )
+        db.add_all([user_msg, ai_msg])
+        conversation.updated_at = datetime.now(UTC)
+
     db.commit()
     db.refresh(log_entry)
 
@@ -301,6 +501,10 @@ def query_ecoguide(
         destination_name=dest_name,
         cdoa_version=cdoa_ver,
         citations=citations,
+        claims=claims,
+        limitations=limitations,
+        suggested_action=suggested_action or suggested_next_step,
+        suggested_next_step=suggested_next_step,
         confidence_level=confidence_level,
         provider=provider_name,
         fallback_used=fallback_used,
@@ -308,7 +512,6 @@ def query_ecoguide(
         language_used=lang,
         log_id=log_entry.id,
         abstain_reason=abstain_reason,
-        suggested_action=suggested_action,
         contact_channel=contact_channel,
     )
 
@@ -678,6 +881,24 @@ def execute_action_proposal(
             after_state = {"status": "TASK_DISPATCHED"}
             message = "Tugas operasional staf berhasil dibuat."
 
+    elif action_type == "CANCEL_PICKUP_DRAFT":
+        if target_id:
+            pickup = db.get(PickupRequest, target_id)
+            if pickup:
+                if pickup.user_id != actor.id and not any(
+                    r.role.code in ["ADMIN", "SUPER_ADMIN"] for r in getattr(actor, "roles", [])
+                ):
+                    raise AuthorizationError(
+                        "Akses ditolak: Anda bukan pemilik tiket penjemputan ini."
+                    )
+                before_state = {"status": pickup.status}
+                pickup.status = PickupStatus.CANCELLED.value
+                pickup.cancellation_reason = prop.parameters.get(
+                    "cancellation_reason", "Dibatalkan oleh pengguna"
+                )
+                after_state = {"status": pickup.status, "reason": pickup.cancellation_reason}
+                message = f"Tiket penjemputan {pickup.public_code} berhasil dibatalkan."
+
     elif action_type == "ADJUST_SERVICE_SLOT":
         new_limit = prop.parameters.get("new_limit_kg", 850.0)
         before_state = {"max_capacity_kg": 650.0}
@@ -726,3 +947,103 @@ def execute_action_proposal(
         after_state=after_state,
         executed_at=datetime.now(UTC),
     )
+
+
+# ==============================================================================
+# Conversation Management & Ownership Lifecycle
+# ==============================================================================
+
+
+def create_conversation(
+    db: Session,
+    user: User | None,
+    title: str = "Percakapan EcoGuide",
+    destination_id: str | None = None,
+    session_token: str | None = None,
+) -> AIConversation:
+    """Create a new conversational thread with server-resolved context."""
+    server_ctx = ContextResolver.resolve(db, user, destination_id)
+    conv = AIConversation(
+        user_id=user.id if user else None,
+        session_token=session_token,
+        destination_id=server_ctx.scope.destination_id,
+        title=title,
+        actor_type=server_ctx.actor.actor_type,
+        is_archived=False,
+    )
+    db.add(conv)
+    db.commit()
+    db.refresh(conv)
+    return conv
+
+
+def list_conversations(
+    db: Session,
+    user: User | None,
+    session_token: str | None = None,
+) -> list[AIConversation]:
+    """List active conversations owned by the user or current guest session."""
+    stmt = (
+        select(AIConversation)
+        .where(AIConversation.is_archived.is_(False))
+        .order_by(AIConversation.updated_at.desc())
+    )
+    if user:
+        stmt = stmt.where(AIConversation.user_id == user.id)
+    elif session_token:
+        stmt = stmt.where(
+            AIConversation.session_token == session_token, AIConversation.user_id.is_(None)
+        )
+    else:
+        return []
+    return list(db.scalars(stmt).all())
+
+
+def get_conversation(
+    db: Session,
+    conversation_id: str,
+    user: User | None,
+    session_token: str | None = None,
+) -> AIConversation:
+    """Get single conversation with ownership boundary enforcement."""
+    conv = db.get(AIConversation, conversation_id)
+    if not conv:
+        raise NotFoundError(f"Percakapan dengan ID '{conversation_id}' tidak ditemukan.")
+
+    # Strict Ownership Authorization
+    if user:
+        if conv.user_id and conv.user_id != user.id:
+            server_ctx = ContextResolver.resolve(db, user)
+            if not server_ctx.actor.is_admin:
+                raise AuthorizationError("Akses ditolak: Percakapan ini bukan milik Anda.")
+    else:
+        if conv.user_id:
+            raise AuthorizationError("Akses ditolak: Percakapan ini memerlukan autentikasi.")
+        if session_token and conv.session_token and conv.session_token != session_token:
+            raise AuthorizationError("Akses ditolak: Session token percakapan tidak cocok.")
+
+    return conv
+
+
+def archive_conversation(
+    db: Session,
+    conversation_id: str,
+    user: User | None,
+) -> AIConversation:
+    """Archive a conversation thread."""
+    conv = get_conversation(db, conversation_id, user)
+    conv.is_archived = True
+    db.commit()
+    db.refresh(conv)
+    return conv
+
+
+def delete_conversation(
+    db: Session,
+    conversation_id: str,
+    user: User | None,
+) -> None:
+    """Delete a conversation thread and cascade delete its messages."""
+    conv = get_conversation(db, conversation_id, user)
+    db.delete(conv)
+    db.commit()

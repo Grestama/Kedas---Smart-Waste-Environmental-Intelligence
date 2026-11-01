@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session
 
 from alembic import command
 
-EXPECTED_HEAD = "0010_ai_knowledge"
+EXPECTED_HEAD = "0011_ai_conversations"
 
 
 @pytest.fixture
@@ -109,6 +109,8 @@ def test_mig_001_to_mig_006_full_upgrade_and_inspection(clean_migrated_db):
         "knowledge_documents",
         "knowledge_chunks",
         "ai_interaction_logs",
+        "ai_conversations",
+        "ai_messages",
     }
     for t in expected_tables:
         assert t in tables, f"Expected table '{t}' missing from migrated schema."
@@ -144,13 +146,13 @@ def test_mig_007_to_mig_009_downgrade_and_reupgrade_cycle(clean_migrated_db):
     # Start at head
     command.upgrade(cfg, "head")
 
-    # MIG-007: Downgrade 1 revision (0010 -> 0009)
+    # MIG-007: Downgrade 1 revision (0011 -> 0010)
     command.downgrade(cfg, "-1")
     with engine.connect() as conn:
         from sqlalchemy import text
 
         v = conn.execute(text("SELECT version_num FROM alembic_version")).scalar()
-        assert v == "0009_cdoa_agreements", f"Expected version 0009_cdoa_agreements, got {v}"
+        assert v == "0010_ai_knowledge", f"Expected version 0010_ai_knowledge, got {v}"
 
     # MIG-008: Re-upgrade to head after downgrade -1
     command.upgrade(cfg, "head")

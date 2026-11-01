@@ -30,7 +30,9 @@ from app.modules.account.models import (
 # --- AI Innovation Models ---
 from app.modules.ai.models import (
     AICapability,
+    AIConversation,
     AIInteractionLog,
+    AIMessage,
     KnowledgeChunk,
     KnowledgeDocument,
     KnowledgeDocumentStatus,
@@ -343,4 +345,6 @@ __all__ = [
     "KnowledgeChunk",
     "AICapability",
     "AIInteractionLog",
+    "AIConversation",
+    "AIMessage",
 ]

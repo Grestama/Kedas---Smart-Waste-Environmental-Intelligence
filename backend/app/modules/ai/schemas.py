@@ -7,7 +7,11 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.modules.ai.models import KnowledgeDocumentStatus, KnowledgeSourceType
+from app.modules.ai.models import (
+    AuthorityClass,
+    KnowledgeDocumentStatus,
+    KnowledgeSourceType,
+)
 
 
 class CitationSchema(BaseModel):
@@ -34,6 +38,7 @@ class KnowledgeChunkResponse(BaseModel):
 class KnowledgeDocumentCreate(BaseModel):
     title: str = Field(min_length=3, max_length=255)
     source_type: KnowledgeSourceType = KnowledgeSourceType.SOP
+    authority_class: AuthorityClass = AuthorityClass.INTERNAL_SOP
     destination_id: str | None = None
     organization_id: str | None = None
     cdoa_id: str | None = None
@@ -42,6 +47,10 @@ class KnowledgeDocumentCreate(BaseModel):
     content_raw: str = Field(
         min_length=10, description="Raw markdown or text content to be chunked"
     )
+    effective_from: datetime | None = None
+    effective_until: datetime | None = None
+    tags: list[str] = Field(default_factory=list)
+    initial_status: KnowledgeDocumentStatus = KnowledgeDocumentStatus.PUBLISHED
 
 
 class KnowledgeDocumentResponse(BaseModel):
@@ -58,6 +67,7 @@ class KnowledgeDocumentResponse(BaseModel):
     status: str
     checksum: str
     total_chunks: int
+    metadata_json: str | None = None
     created_by: str
     created_at: datetime
     updated_at: datetime
@@ -69,6 +79,22 @@ class KnowledgeDocumentDetailResponse(KnowledgeDocumentResponse):
 
 class KnowledgeDocumentStatusUpdate(BaseModel):
     status: KnowledgeDocumentStatus
+
+
+class KnowledgeApproveRequest(BaseModel):
+    notes: str | None = None
+
+
+class KnowledgeRejectRequest(BaseModel):
+    reason: str = Field(min_length=3, max_length=1000)
+
+
+class KnowledgeExpireRequest(BaseModel):
+    reason: str | None = None
+
+
+class KnowledgeSupersedeRequest(BaseModel):
+    superseded_by_id: str = Field(min_length=36, max_length=36)
 
 
 class KnowledgeSearchQuery(BaseModel):
@@ -88,16 +114,56 @@ class EcoGuideQueryRequest(BaseModel):
     destination_id: str | None = None
     user_language: str = Field(default="id", pattern="^(id|en)$")
     session_id: str | None = None
+    conversation_id: str | None = None
+
+
+class ConversationCreateRequest(BaseModel):
+    title: str = Field(default="Percakapan EcoGuide", max_length=255)
+    destination_id: str | None = None
+
+
+class ConversationMessageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    conversation_id: str
+    sender: str
+    text: str
+    citations_json: str | None = None
+    provenance: str
+    status: str
+    abstain_reason: str | None = None
+    latency_ms: int | None = None
+    created_at: datetime
+
+
+class ConversationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    title: str
+    destination_id: str | None = None
+    actor_type: str
+    is_archived: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationDetailResponse(ConversationResponse):
+    messages: list[ConversationMessageResponse] = Field(default_factory=list)
 
 
 class EcoGuideResponse(BaseModel):
     answer: str
-    status: str = "SUCCESS"  # SUCCESS, INSUFFICIENT_CONTEXT, CONFLICTING_SOURCES, DEGRADED_FALLBACK
+    status: str = "SUCCESS"  # SUCCESS, PARTIAL_CONTEXT, INSUFFICIENT_CONTEXT, CONFLICTING_SOURCES, BLOCKED_BY_SAFETY_FILTER
     destination_name: str | None = None
     cdoa_version: str | None = None
     citations: list[CitationSchema] = Field(default_factory=list)
-    abstain_reason: str | None = None
+    claims: list[str] = Field(default_factory=list)
+    limitations: list[str] = Field(default_factory=list)
     suggested_action: str | None = None
+    suggested_next_step: str | None = None
+    abstain_reason: str | None = None
     contact_channel: str | None = None
     confidence_level: str = "HIGH"
     provider: str
@@ -177,6 +243,7 @@ class ActionProposalPayload(BaseModel):
     description: str
     target_id: str | None = None
     service_area_id: str | None = None
+    confirmation_required: bool = True
     parameters: dict[str, Any] = Field(default_factory=dict)
 
 

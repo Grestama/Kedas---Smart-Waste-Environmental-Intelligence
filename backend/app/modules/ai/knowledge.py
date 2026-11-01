@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.core.errors import NotFoundError
+from app.core.errors import NotFoundError, ValidationError
+from app.modules.ai.chunker import StructureAwareChunker
 from app.modules.ai.models import (
     KnowledgeChunk,
     KnowledgeDocument,
@@ -30,9 +33,20 @@ def ingest_document(
     req: KnowledgeDocumentCreate,
     created_by: str,
 ) -> KnowledgeDocument:
-    """Ingest a new knowledge document, parse into scoped chunks, and publish."""
+    """Ingest a new knowledge document, parse into structure-aware scoped chunks, and set lifecycle status."""
     raw_content = req.content_raw.strip()
     checksum = _compute_checksum(raw_content)
+
+    meta = {
+        "authority_class": req.authority_class.value,
+        "effective_from": req.effective_from.isoformat() if req.effective_from else None,
+        "effective_until": req.effective_until.isoformat() if req.effective_until else None,
+        "tags": req.tags,
+        "review_notes": None,
+        "rejection_reason": None,
+        "approved_by": None,
+        "approved_at": None,
+    }
 
     doc = KnowledgeDocument(
         id=str(uuid.uuid4()),
@@ -43,37 +57,31 @@ def ingest_document(
         cdoa_id=req.cdoa_id,
         is_public=req.is_public,
         version=req.version,
-        status=KnowledgeDocumentStatus.PUBLISHED.value,
+        status=req.initial_status.value,
         checksum=checksum,
         total_chunks=0,
+        metadata_json=json.dumps(meta),
         created_by=created_by,
     )
     db.add(doc)
     db.flush()
 
-    # Split content into sections/paragraphs for granular provenance
-    sections = re.split(r"\n(?=#{1,4}\s+|Pasal\s+\d+|Bab\s+[IVXLCDM]+)", raw_content)
+    # Use Structure-Aware Chunker preserving legal clauses, SOPs, and Adat structure
+    parsed_chunks = StructureAwareChunker.chunk(
+        raw_content,
+        source_type=req.source_type.value,
+        authority_class=req.authority_class.value,
+    )
+
     chunks: list[KnowledgeChunk] = []
-
-    for index, sec in enumerate(sections):
-        cleaned = sec.strip()
-        if len(cleaned) < 15:
-            continue
-
-        # Extract title from first line if available
-        first_line = cleaned.split("\n", 1)[0].strip()
-        section_title = (
-            first_line[:100] if first_line.startswith(("#", "Pasal", "Bab", "SOP")) else None
-        )
-
-        token_est = len(cleaned.split())
+    for p_chunk in parsed_chunks:
         chunk = KnowledgeChunk(
             id=str(uuid.uuid4()),
             document_id=doc.id,
-            chunk_index=index,
-            section_title=section_title,
-            content=cleaned,
-            token_count=token_est,
+            chunk_index=p_chunk.chunk_index,
+            section_title=p_chunk.section_title,
+            content=p_chunk.content,
+            token_count=p_chunk.token_count,
         )
         db.add(chunk)
         chunks.append(chunk)
@@ -89,6 +97,8 @@ def list_knowledge_documents(
     destination_id: str | None = None,
     source_type: str | None = None,
     status: str | None = None,
+    authority_class: str | None = None,
+    tag: str | None = None,
 ) -> list[KnowledgeDocument]:
     """List knowledge documents with optional filters."""
     stmt = select(KnowledgeDocument).order_by(KnowledgeDocument.created_at.desc())
@@ -98,7 +108,15 @@ def list_knowledge_documents(
         stmt = stmt.where(KnowledgeDocument.source_type == source_type)
     if status:
         stmt = stmt.where(KnowledgeDocument.status == status)
-    return list(db.scalars(stmt).all())
+
+    docs = list(db.scalars(stmt).all())
+    if authority_class:
+        docs = [d for d in docs if d.authority_class == authority_class]
+    if tag:
+        docs = [
+            d for d in docs if tag.lower() in [t.lower() for t in d.get_metadata().get("tags", [])]
+        ]
+    return docs
 
 
 def get_knowledge_document(db: Session, doc_id: str) -> KnowledgeDocument:
@@ -113,11 +131,113 @@ def get_knowledge_document(db: Session, doc_id: str) -> KnowledgeDocument:
     return doc
 
 
+def approve_knowledge_document(
+    db: Session, doc_id: str, approver_email: str, notes: str | None = None
+) -> KnowledgeDocument:
+    """Approve a pending knowledge document and transition to PUBLISHED."""
+    doc = get_knowledge_document(db, doc_id)
+    if doc.status == KnowledgeDocumentStatus.SUPERSEDED.value:
+        raise ValidationError("Dokumen yang berstatus SUPERSEDED tidak dapat disetujui kembali.")
+    if doc.status == KnowledgeDocumentStatus.EXPIRED.value:
+        raise ValidationError(
+            "Dokumen kedaluwarsa tidak dapat disetujui tanpa memperpanjang masa berlaku."
+        )
+
+    meta = doc.get_metadata()
+    meta["approved_by"] = approver_email
+    meta["approved_at"] = datetime.now(UTC).isoformat()
+    if notes:
+        meta["review_notes"] = notes
+    doc.set_metadata(meta)
+    doc.status = KnowledgeDocumentStatus.PUBLISHED.value
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
+def reject_knowledge_document(
+    db: Session, doc_id: str, rejector_email: str, reason: str
+) -> KnowledgeDocument:
+    """Reject a knowledge document and transition to REJECTED."""
+    doc = get_knowledge_document(db, doc_id)
+    if doc.status == KnowledgeDocumentStatus.SUPERSEDED.value:
+        raise ValidationError("Dokumen yang berstatus SUPERSEDED tidak dapat diubah statusnya.")
+
+    meta = doc.get_metadata()
+    meta["rejected_by"] = rejector_email
+    meta["rejected_at"] = datetime.now(UTC).isoformat()
+    meta["rejection_reason"] = reason
+    doc.set_metadata(meta)
+    doc.status = KnowledgeDocumentStatus.REJECTED.value
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
+def expire_knowledge_document(
+    db: Session, doc_id: str, actor_email: str, reason: str | None = None
+) -> KnowledgeDocument:
+    """Manually mark a knowledge document as EXPIRED."""
+    doc = get_knowledge_document(db, doc_id)
+    if doc.status == KnowledgeDocumentStatus.SUPERSEDED.value:
+        raise ValidationError("Dokumen yang berstatus SUPERSEDED tidak dapat diubah statusnya.")
+
+    meta = doc.get_metadata()
+    meta["expired_by"] = actor_email
+    meta["expired_at"] = datetime.now(UTC).isoformat()
+    if reason:
+        meta["expiry_reason"] = reason
+    doc.set_metadata(meta)
+    doc.status = KnowledgeDocumentStatus.EXPIRED.value
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
+def supersede_knowledge_document(
+    db: Session, doc_id: str, superseded_by_id: str, actor_email: str
+) -> KnowledgeDocument:
+    """Mark a knowledge document as SUPERSEDED by another active document."""
+    doc = get_knowledge_document(db, doc_id)
+    # verify replacement exists
+    get_knowledge_document(db, superseded_by_id)
+
+    meta = doc.get_metadata()
+    meta["superseded_by_id"] = superseded_by_id
+    meta["superseded_by_actor"] = actor_email
+    meta["superseded_at"] = datetime.now(UTC).isoformat()
+    doc.set_metadata(meta)
+    doc.status = KnowledgeDocumentStatus.SUPERSEDED.value
+    db.commit()
+    db.refresh(doc)
+    return doc
+
+
 def update_knowledge_document_status(
     db: Session, doc_id: str, status: KnowledgeDocumentStatus
 ) -> KnowledgeDocument:
-    """Update document status (e.g. PUBLISHED, RETIRED, DRAFT)."""
+    """Update document status with lifecycle validation rules."""
     doc = get_knowledge_document(db, doc_id)
+    if doc.status == KnowledgeDocumentStatus.SUPERSEDED.value:
+        raise ValidationError(
+            "Dokumen berstatus SUPERSEDED adalah arsip historis dan tidak dapat diubah statusnya."
+        )
+    if (
+        doc.status == KnowledgeDocumentStatus.REJECTED.value
+        and status == KnowledgeDocumentStatus.PUBLISHED
+    ):
+        raise ValidationError(
+            "Dokumen yang ditolak harus melalui alur review formal atau diunggah ulang sebagai revisi baru."
+        )
+    if (
+        doc.status == KnowledgeDocumentStatus.EXPIRED.value
+        and status == KnowledgeDocumentStatus.PUBLISHED
+        and doc.is_expired
+    ):
+        raise ValidationError(
+            "Dokumen telah melewati masa berlaku (expired) dan tidak dapat langsung dipublikasikan."
+        )
+
     doc.status = status.value
     db.commit()
     db.refresh(doc)
@@ -156,23 +276,36 @@ def scoped_retrieve_chunks(
         .where(KnowledgeDocument.status == KnowledgeDocumentStatus.PUBLISHED.value)
     )
 
+    # 1. Strict Tenant / Organization Isolation
     if is_public_only:
-        stmt = stmt.where(KnowledgeDocument.is_public.is_(True))
+        stmt = stmt.where(
+            KnowledgeDocument.is_public.is_(True),
+            KnowledgeDocument.organization_id.is_(None),
+        )
+    elif organization_id:
+        # Authorized member can see their own organization documents or global public documents
+        stmt = stmt.where(
+            (KnowledgeDocument.organization_id == organization_id)
+            | (KnowledgeDocument.organization_id.is_(None) & KnowledgeDocument.is_public.is_(True))
+        )
+    else:
+        # User without org membership cannot see any private organization documents
+        stmt = stmt.where(KnowledgeDocument.organization_id.is_(None))
 
+    # 2. Strict Destination Boundary
     if destination_id:
-        # Match destination specific or global documents (destination_id is NULL)
+        # Match destination-specific or global provincial documents (destination_id is NULL)
         stmt = stmt.where(
             (KnowledgeDocument.destination_id == destination_id)
             | (KnowledgeDocument.destination_id.is_(None))
         )
-
-    if organization_id:
-        stmt = stmt.where(
-            (KnowledgeDocument.organization_id == organization_id)
-            | (KnowledgeDocument.organization_id.is_(None))
-        )
+    else:
+        # If no destination is authorized/selected, strictly restrict to global public documents
+        stmt = stmt.where(KnowledgeDocument.destination_id.is_(None))
 
     results = db.execute(stmt).all()
+    # Filter out expired documents (effective_until passed or status EXPIRED)
+    results = [r for r in results if not r[1].is_expired]
 
     if not results:
         return []
@@ -290,7 +423,7 @@ def scoped_retrieve_chunks(
             + (section_matches * 1.5)
             + (domain_matches * 1.5)
             + phrase_bonus
-        ) / max(1, len(query_tokens))
+        ) / max(1, min(len(query_tokens), 6))
 
         # 4. Destination relevance boost (prioritize local banjar CDOA/SOP over generic provincial regulations)
         if destination_id and doc.destination_id == destination_id:

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime
 from enum import StrEnum
+from typing import Any
 
 from sqlalchemy import (
     Boolean,
@@ -21,8 +23,24 @@ from app.db.session import Base, TimestampMixin
 
 class KnowledgeDocumentStatus(StrEnum):
     DRAFT = "DRAFT"
+    VALIDATING = "VALIDATING"
+    PARSING = "PARSING"
+    CHUNKING = "CHUNKING"
+    PENDING_REVIEW = "PENDING_REVIEW"
     PUBLISHED = "PUBLISHED"
+    REJECTED = "REJECTED"
+    EXPIRED = "EXPIRED"
+    SUPERSEDED = "SUPERSEDED"
     RETIRED = "RETIRED"
+
+
+class AuthorityClass(StrEnum):
+    GOVERNMENT_PROVINCIAL = "GOVERNMENT_PROVINCIAL"
+    GOVERNMENT_REGENCY = "GOVERNMENT_REGENCY"
+    DESA_ADAT = "DESA_ADAT"
+    INTERNAL_SOP = "INTERNAL_SOP"
+    SCIENTIFIC = "SCIENTIFIC"
+    COMMUNITY = "COMMUNITY"
 
 
 class KnowledgeSourceType(StrEnum):
@@ -30,6 +48,8 @@ class KnowledgeSourceType(StrEnum):
     SOP = "SOP"
     CDOA = "CDOA"
     EDUCATIONAL = "EDUCATIONAL"
+    AWIG_AWIG = "AWIG_AWIG"
+    PARAREM = "PARAREM"
 
 
 class AICapability(StrEnum):
@@ -75,6 +95,44 @@ class KnowledgeDocument(Base, TimestampMixin):
         "KnowledgeChunk", back_populates="document", cascade="all, delete-orphan"
     )
 
+    def get_metadata(self) -> dict[str, Any]:
+        """Safely parse metadata_json into a dictionary."""
+        if not self.metadata_json:
+            return {}
+        try:
+            val = json.loads(self.metadata_json)
+            if isinstance(val, dict):
+                return val
+            return {}
+        except Exception:
+            return {}
+
+    def set_metadata(self, data: dict[str, Any]) -> None:
+        """Serialize dictionary into metadata_json."""
+        self.metadata_json = json.dumps(data)
+
+    @property
+    def authority_class(self) -> str:
+        val = self.get_metadata().get("authority_class")
+        return str(val) if val else AuthorityClass.INTERNAL_SOP.value
+
+    @property
+    def effective_until(self) -> datetime | None:
+        raw = self.get_metadata().get("effective_until")
+        if not raw:
+            return None
+        try:
+            return datetime.fromisoformat(raw)
+        except Exception:
+            return None
+
+    @property
+    def is_expired(self) -> bool:
+        if self.status == KnowledgeDocumentStatus.EXPIRED.value:
+            return True
+        exp = self.effective_until
+        return bool(exp is not None and datetime.now(UTC) > exp)
+
 
 class KnowledgeChunk(Base, TimestampMixin):
     """Scoped knowledge chunk for RAG retrieval with provenance."""
@@ -119,3 +177,55 @@ class AIInteractionLog(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False, index=True
     )
+
+
+class AIConversation(Base, TimestampMixin):
+    """Persistent conversational thread with ownership and destination scoping."""
+
+    __tablename__ = "ai_conversations"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    session_token: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    destination_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("service_areas.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    title: Mapped[str] = mapped_column(String(255), default="Percakapan EcoGuide", nullable=False)
+    actor_type: Mapped[str] = mapped_column(String(32), default="GUEST", nullable=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    messages: Mapped[list[AIMessage]] = relationship(
+        "AIMessage",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="AIMessage.created_at",
+    )
+
+
+class AIMessage(Base):
+    """Individual message turn within an AIConversation thread."""
+
+    __tablename__ = "ai_messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    conversation_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("ai_conversations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    sender: Mapped[str] = mapped_column(String(16), nullable=False)  # 'user' | 'ai'
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    citations_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    provenance: Mapped[str] = mapped_column(String(32), default="VERIFIED", nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="ANSWERED", nullable=False)
+    abstain_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    log_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+    conversation: Mapped[AIConversation] = relationship("AIConversation", back_populates="messages")
