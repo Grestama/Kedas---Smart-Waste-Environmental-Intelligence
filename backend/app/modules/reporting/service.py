@@ -146,7 +146,7 @@ def get_operational_summary_report(
         CategoryWeightMetric(
             category_id=r[0],
             category_name=r[1],
-            verified_weight_kg=round(float(r[2]), 3),
+            verified_weight_kg=round(float(r[2] if r[2] is not None else 0.0), 3),
             pickups_count=int(r[3]),
             points_issued=0,
         )
@@ -174,7 +174,7 @@ def get_operational_summary_report(
             service_area_id=r[0],
             area_name=r[1],
             pickups_count=int(r[2]),
-            verified_weight_kg=round(float(r[3]), 3),
+            verified_weight_kg=round(float(r[3] if r[3] is not None else 0.0), 3),
         )
         for r in area_rows
     ]
