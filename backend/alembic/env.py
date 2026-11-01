@@ -60,7 +60,7 @@ db_url = config.get_main_option("sqlalchemy.url")
 if not db_url:
     settings = get_settings()
     db_url = settings.effective_database_url
-    config.set_main_option("sqlalchemy.url", db_url)
+    config.set_main_option("sqlalchemy.url", db_url.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:
