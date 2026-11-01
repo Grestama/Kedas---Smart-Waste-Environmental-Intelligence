@@ -25,6 +25,9 @@ _hasher = PasswordHasher(
     salt_len=16,
 )
 
+# Precomputed dummy hash to prevent account enumeration timing attacks
+_DUMMY_PASSWORD_HASH = _hasher.hash("dummy_mitigate_account_enumeration_timing_attack")
+
 
 def hash_password(password: str) -> str:
     """Hash password using Argon2id."""
@@ -39,6 +42,18 @@ def verify_password(password: str, password_hash: str) -> bool:
         return False
     except Exception:
         return False
+
+
+def verify_password_constant_time(password: str, password_hash: str | None) -> bool:
+    """Verify password with constant-time guarantee.
+    
+    If password_hash is None (account not found), performs dummy Argon2 verification
+    so that request latency is identical between existing and non-existing accounts.
+    """
+    if password_hash is None:
+        verify_password(password, _DUMMY_PASSWORD_HASH)
+        return False
+    return verify_password(password, password_hash)
 
 
 def generate_token(nbytes: int = 32) -> str:

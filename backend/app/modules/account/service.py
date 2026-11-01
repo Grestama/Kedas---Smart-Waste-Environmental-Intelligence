@@ -20,7 +20,12 @@ from app.core.errors import (
     NotFoundError,
     ValidationError,
 )
-from app.core.security import generate_token, hash_password, verify_password
+from app.core.security import (
+    generate_token,
+    hash_password,
+    verify_password,
+    verify_password_constant_time,
+)
 from app.db.base import AuditLog
 from app.modules.account.models import (
     AccountStatus,
@@ -137,7 +142,12 @@ def login_user(
     stmt = select(User).where((User.email == req.identifier) | (User.phone == req.identifier))
     user = db.scalar(stmt)
 
-    if not user or not verify_password(req.password, user.password_hash):
+    # Constant-time verification to prevent timing attack enumeration
+    password_valid = verify_password_constant_time(
+        req.password, user.password_hash if user else None
+    )
+
+    if not user or not password_valid:
         # Generic error message to prevent account enumeration
         raise AuthenticationError("Kredensial login tidak valid.")
 

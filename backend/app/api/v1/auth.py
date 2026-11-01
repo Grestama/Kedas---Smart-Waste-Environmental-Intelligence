@@ -9,6 +9,11 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.dependencies import get_current_session
+from app.core.rate_limit import (
+    POLICY_AUTH_REGISTER_IP,
+    get_client_ip,
+    rate_limiter,
+)
 from app.db.session import get_db_session
 from app.modules.account import service as account_service
 from app.modules.account.models import AuthSession
@@ -46,11 +51,14 @@ async def register(
     request: Request,
     db: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, Any]:
+    client_ip = get_client_ip(request)
+    rate_limiter.check_rate_limit(client_ip, POLICY_AUTH_REGISTER_IP, record_hit=True, request=request)
+
     user = account_service.register_user(db, req)
     token, _ = account_service.login_user(
         db,
         UserLoginRequest(identifier=req.email or req.phone or "", password=req.password),
-        ip_address=request.client.host if request.client else None,
+        ip_address=client_ip,
         user_agent=request.headers.get("user-agent"),
     )
     _set_auth_cookie(response, token)
@@ -72,12 +80,22 @@ async def login(
     request: Request,
     db: Annotated[Session, Depends(get_db_session)],
 ) -> dict[str, Any]:
-    token, user = account_service.login_user(
-        db,
-        req,
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("user-agent"),
-    )
+    # Enforce multi-dimensional rate limiting before attempting password verification
+    rate_limiter.check_login_rate_limits(request, req.identifier)
+
+    client_ip = get_client_ip(request)
+    try:
+        token, user = account_service.login_user(
+            db,
+            req,
+            ip_address=client_ip,
+            user_agent=request.headers.get("user-agent"),
+        )
+        rate_limiter.record_login_success(request, req.identifier)
+    except Exception as exc:
+        rate_limiter.record_login_failure(request, req.identifier)
+        raise exc
+
     _set_auth_cookie(response, token)
     return {
         "user": UserResponse.model_validate(user),

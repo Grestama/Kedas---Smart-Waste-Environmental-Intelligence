@@ -112,8 +112,13 @@ class ConflictError(AppError):
 class RateLimitError(AppError):
     """Rate limit exceeded — 429."""
 
-    def __init__(self, message: str = "Terlalu banyak percobaan. Silakan coba lagi nanti."):
+    def __init__(
+        self,
+        message: str = "Terlalu banyak percobaan. Silakan coba lagi nanti.",
+        retry_after: int | None = None,
+    ):
         super().__init__(code="RATE_LIMIT_EXCEEDED", message=message, status_code=429)
+        self.retry_after = retry_after
 
 
 class ServiceUnavailableError(AppError):
@@ -132,6 +137,7 @@ def _build_error_response(
     code: str,
     message: str,
     details: list[ErrorDetail] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     """Build a standardized error JSONResponse."""
     request_id = getattr(request.state, "request_id", None)
@@ -144,6 +150,7 @@ def _build_error_response(
     return JSONResponse(
         status_code=status_code,
         content=body.model_dump(exclude_none=True),
+        headers=headers,
     )
 
 
@@ -155,12 +162,16 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+        headers: dict[str, str] = {}
+        if isinstance(exc, RateLimitError) and exc.retry_after is not None:
+            headers["Retry-After"] = str(exc.retry_after)
         return _build_error_response(
             request,
             status_code=exc.status_code,
             code=exc.code,
             message=exc.message,
             details=exc.details,
+            headers=headers or None,
         )
 
     @app.exception_handler(RequestValidationError)
